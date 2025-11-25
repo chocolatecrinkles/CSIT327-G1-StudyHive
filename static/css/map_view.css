@@ -135,11 +135,11 @@ body {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
   border-radius: 10px;
   overflow: hidden;
-  /* Increased width to ensure "Logout" fits */
-  min-width: 250px; 
+  min-width: 250px;
   z-index: 1000;
   animation: dropdownFade 0.25s ease;
 }
+
 /* REPLACE the old dropdown styles in map_view.css with this */
 
 .dropdown-menu {
@@ -151,8 +151,7 @@ body {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
   border-radius: 10px;
   overflow: hidden;
-  /* Correct width to fit "Logout" */
-  min-width: 250px; 
+  min-width: 250px;
   z-index: 1000;
   animation: dropdownFade 0.25s ease;
 }
@@ -407,7 +406,6 @@ body {
   border-radius: 16px;
   overflow: hidden;
   margin-bottom: 1.25rem;
-  /* cursor: pointer; */ /* <--- DELETED */
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   box-shadow: var(--shadow-sm);
 }
@@ -424,10 +422,10 @@ body {
 }
 
 .spot-image {
-  position: relative;
   height: 180px;
   overflow: hidden;
   background: var(--gray);
+  z-index: 50 !important;
 }
 
 .spot-image img {
@@ -438,32 +436,105 @@ body {
   transition: transform 0.4s ease;
 }
 
+.spot-image .map-status-badge {
+  position: absolute !important;
+  z-index: 999999 !important;
+  pointer-events: none !important;
+}
+
 .spot-card:hover .spot-image img {
   transform: scale(1.1);
 }
 
-.status-badge {
+/* ==== Spot Card Image Carousel ==== */
+.spot-image-carousel {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Base state for all images */
+.spot-image-carousel .carousel-image {
   position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
-  padding: 0.375rem 0.875rem;
-  border-radius: 50px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  box-shadow: var(--shadow-sm);
-  z-index: 16; /* Higher than trending badge */
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+
+  opacity: 0;
+  transform: translateX(0);
+  transition: opacity 0.35s ease, transform 0.35s ease;
 }
 
-.status-badge.open {
-  background: var(--green-light);
-  color: var(--green-dark);
+/* Currently visible image */
+.spot-image-carousel .carousel-image.active {
+  opacity: 1;
+  z-index: 2;
 }
 
-.status-badge.closed {
-  background: #ffebee;
-  color: #c62828;
+/* Nav buttons */
+.spot-image-carousel .carousel-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+  z-index: 3;
+}
+
+.spot-image-carousel .carousel-btn.prev {
+  left: 6px;
+}
+
+.spot-image-carousel .carousel-btn.next {
+  right: 6px;
+}
+
+.spot-image-carousel .carousel-btn i {
+  pointer-events: none;
+}
+
+/* ========== Slide directions (used by JS) ========== */
+
+/* prepare next image off-screen */
+.spot-image-carousel .carousel-image.slide-in-right {
+  transform: translateX(100%);
+}
+
+.spot-image-carousel .carousel-image.slide-in-left {
+  transform: translateX(-100%);
+}
+
+/* animate next image into place */
+.spot-image-carousel .carousel-image.slide-from-right {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.spot-image-carousel .carousel-image.slide-from-left {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* animate current image out */
+.spot-image-carousel .carousel-image.slide-out-left {
+  opacity: 0;
+  transform: translateX(-100%);
+}
+
+.spot-image-carousel .carousel-image.slide-out-right {
+  opacity: 0;
+  transform: translateX(100%);
 }
 
 .favorite-btn {
@@ -590,7 +661,6 @@ body {
   width: 100%;
   height: 100%;
   position: relative;
-  /* Added transition for smooth zoom */
   transition: transform 0.3s ease-out;
 }
 
@@ -606,134 +676,114 @@ body {
   position: absolute;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
+  z-index: 500;
 }
-
 .map-overlays > * {
   pointer-events: auto;
 }
 
-/* ADD THIS NEW RULESET */
-.map-markers {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  transform-origin: center center;
-  transition: transform 0.3s ease-out;
-  pointer-events: none; /* Container isn't clickable */
+/* ===== Leaflet Marker Styling ===== */
+
+.custom-map-marker-div {
+  transform: translate3d(0, 0, 0);
 }
 
-.map-markers > .map-marker {
-  pointer-events: auto; /* Markers inside ARE clickable */
-}
-
-.map-marker {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  cursor: pointer;
-  /* Hidden by default, as requested */
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-/* This class is added by JS to show the marker */
-.map-marker.visible {
-  opacity: 1;
-  visibility: visible;
-}
-
-.map-marker.pulse {
-  animation: markerPulse 0.6s ease-out;
+.custom-map-marker-div.pulse {
+  animation: markerPulse 1s ease-in-out infinite;
 }
 
 @keyframes markerPulse {
-  0% {
-    transform: translate(-50%, -50%) scale(0.5);
-    opacity: 0;
+  0%, 100% {
+    transform: scale(1);
   }
   50% {
-    transform: translate(-50%, -50%) scale(1.1);
-  }
-  100% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 1;
+    transform: scale(1.12);
   }
 }
 
 .marker-pin {
   position: relative;
-  width: 50px;
-  height: 50px;
-  background: var(--green-main);
-  border-radius: 50% 50% 50% 0;
-  transform: rotate(-45deg);
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: #3ecf8e; /* default open color */
+  border: 3px solid #ffffff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--shadow-md);
-  transition: all 0.3s;
-  border: 3px solid var(--white);
+  transform: translate3d(0, 0, 0);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.map-marker:hover .marker-pin {
-  transform: rotate(-45deg) scale(1.15);
-  box-shadow: var(--shadow-lg);
+.marker-pin.open {
+  background: #3ecf8e;
 }
 
-.marker-pin i {
-  transform: rotate(45deg);
-  color: var(--white);
-  font-size: 1.25rem;
+.marker-pin.closed {
+  background: #ff4d4f;
 }
 
-.marker-status {
+.marker-pin.highlighted {
+  transform: scale(1.15);
+}
+
+.marker-pin .marker-inner {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.marker-pin .marker-inner i {
+  color: #ffffff;
+  font-size: 13px;
+}
+
+/* pointer */
+.marker-pin::after {
+  content: "";
   position: absolute;
-  top: -25px;
+  bottom: -7px;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--white);
-  padding: 0.25rem 0.75rem;
-  border-radius: 50px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  white-space: nowrap;
-  box-shadow: var(--shadow-sm);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 8px solid inherit; /* uses marker bg color */
 }
 
-.marker-status.open {
-  color: #2e7d32;
-}
-
-.marker-status.closed {
-  color: #c62828;
-}
-
-.marker-shadow {
+/* drop shadow beneath marker */
+.marker-pin .marker-shadow {
   position: absolute;
-  bottom: -8px;
+  bottom: -10px;
   left: 50%;
   transform: translateX(-50%);
-  width: 30px;
-  height: 8px;
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 50%;
-  filter: blur(4px);
+  width: 22px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.25);
+  filter: blur(3px);
 }
+
+/* ===== Controls & Preview ===== */
 
 /* Enhanced zoom controls with better styling */
 .zoom-controls {
-  position: absolute;
+  position: fixed;
   bottom: 2rem;
   right: 1.5rem;
+  z-index: 100;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  z-index: 10;
 }
 
 .control-btn {
@@ -781,13 +831,13 @@ body {
 }
 
 .map-menu-dropdown {
-  position: absolute;
-  top: 1.5rem;
+  position: fixed;
+  top: 90px;
   right: 1.5rem;
-  z-index: 10;
+  z-index: 100;
 }
 
-/* Map Dropdown (rename this) */
+/* Map Dropdown */
 .map-dropdown-menu {
   position: absolute;
   top: 50px;
@@ -830,22 +880,13 @@ body {
   color: var(--green-main);
 }
 
-.zoom-controls {
-  position: absolute;
-  bottom: 2rem;
-  right: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  z-index: 10;
-}
-
 .location-btn {
   position: absolute;
-  bottom: 8.5rem; 
+  bottom: 9rem;
   right: 1.5rem;
-  z-index: 10;
+  z-index: 100;
 }
+
 /* Enhanced preview card with better styling and animations */
 .map-preview-card {
   position: absolute;
@@ -1581,7 +1622,7 @@ body {
 .trending-badge-map {
   position: absolute;
   top: 10px;
-  left: 10px;
+  right: 10px;
   background: linear-gradient(45deg, #ff7a18, #ffca18);
   color: #fff;
   font-weight: 700;
@@ -1592,7 +1633,7 @@ body {
   align-items: center;
   gap: 6px;
   box-shadow: 0 3px 10px rgba(255, 122, 24, 0.5);
-  z-index: 15; /* Higher than image, lower than status badge */
+  z-index: 15;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   animation: trendingPulse 2s ease-in-out infinite;
@@ -1604,13 +1645,14 @@ body {
 }
 
 @keyframes trendingPulse {
-  0%, 100% { 
-    transform: scale(1); 
-    opacity: 1; 
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
   }
-  50% { 
-    transform: scale(1.05); 
-    opacity: 0.9; 
+
+  50% {
+    transform: scale(1.05);
+    opacity: 0.9;
   }
 }
 
@@ -1619,20 +1661,379 @@ body {
   50% { opacity: 0.7; }
 }
 
-
 /* === MAP CARD LINK WRAPPER === */
 .map-card-link {
   display: block;
-  text-decoration: none; /* Removes the underline */
-  color: inherit; /* Makes text use the card's color, not blue */
-  border-radius: 16px; /* Match your card's border-radius */
+  text-decoration: none;
+  color: inherit;
+  border-radius: 16px;
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  -webkit-tap-highlight-color: transparent; /* Removes blue tap flash on mobile */
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* This applies the hover effect to the LINK, which moves the CARD inside */
 .map-card-link:hover .spot-card {
   border-color: var(--green-main);
   box-shadow: var(--shadow-lg);
   transform: translateY(-6px);
+}
+
+/* ========================================
+   DETAIL SIDEBAR VIEW STYLES
+======================================== */
+
+.spot-detail-view {
+  padding: 0;
+  animation: slideInFromRight 0.3s ease-out;
+  overflow-y: auto;
+  max-height: calc(100vh - 200px);
+}
+
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.detail-image-container {
+  position: relative;
+  width: 100%;
+  height: 250px;
+  overflow: hidden;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.detail-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.detail-image-container:hover .detail-image {
+  transform: scale(1.05);
+}
+
+.detail-status-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  backdrop-filter: blur(10px);
+  z-index: 2;
+}
+
+.detail-status-badge.open {
+  background: rgba(76, 175, 80, 0.95);
+  color: white;
+}
+
+.detail-status-badge.closed {
+  background: rgba(244, 67, 54, 0.95);
+  color: white;
+}
+
+.detail-trending-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  backdrop-filter: blur(10px);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.detail-trending-badge i {
+  animation: flicker 1.5s infinite;
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.detail-content {
+  padding: 0 20px 20px;
+}
+
+.detail-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #2d3436;
+  margin-bottom: 12px;
+  line-height: 1.3;
+}
+
+.detail-rating {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.detail-rating-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ffa726;
+}
+
+.detail-rating-stars {
+  display: flex;
+  gap: 3px;
+}
+
+.detail-rating-stars i {
+  font-size: 1rem;
+  color: #ffa726;
+}
+
+.detail-rating-stars i.filled {
+  color: #ffa726;
+}
+
+.detail-rating-stars i.far {
+  color: #ddd;
+}
+
+.detail-location {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  color: #636e72;
+  font-size: 0.95rem;
+}
+
+.detail-location i {
+  color: #e74c3c;
+  font-size: 1.1rem;
+}
+
+.detail-amenities {
+  margin-bottom: 20px;
+}
+
+.detail-amenities h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2d3436;
+  margin-bottom: 12px;
+}
+
+.detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.detail-tags span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.detail-tags span:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.detail-tags span i {
+  font-size: 0.9rem;
+}
+
+.detail-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.detail-view-full {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.detail-view-full:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.detail-get-directions {
+  width: 100%;
+  padding: 14px;
+  background: white;
+  color: #667eea;
+  border: 2px solid #667eea;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.detail-get-directions:hover {
+  background: #667eea;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+}
+
+.detail-get-directions i {
+  font-size: 1.1rem;
+}
+
+#backToListBtn {
+  background: #f8f9fa;
+  color: #2d3436;
+  transition: all 0.3s ease;
+}
+
+#backToListBtn:hover {
+  background: #e9ecef;
+  transform: translateX(-3px);
+}
+
+.custom-map-marker-div.pulse {
+  animation: markerPulse 1s ease-in-out infinite;
+}
+
+.spot-detail-view::-webkit-scrollbar {
+  width: 6px;
+}
+
+.spot-detail-view::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.spot-detail-view::-webkit-scrollbar-thumb {
+  background: #667eea;
+  border-radius: 10px;
+}
+
+.spot-detail-view::-webkit-scrollbar-thumb:hover {
+  background: #764ba2;
+}
+
+.detail-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  color: #667eea;
+}
+
+.detail-loading i {
+  font-size: 3rem;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spot-image {
+  position: relative !important;
+}
+
+.map-status-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 0;
+  font-weight: 700;
+  background: rgba(255,255,255,0.85);
+  color: #333;
+  z-index: 999999999 !important;
+  transition: opacity 0.25s ease-out, background 0.25s ease-out;
+  pointer-events: none;
+}
+
+.map-status-badge::after {
+  font-size: 0.75rem;
+  content: attr(data-label);
+}
+
+.status-init { opacity: 0.6; }
+
+.map-status-badge.open {
+  background-color: #e8f5e9;
+  color: #1b5e20;
+  border: 1px solid #1b5e20;
+}
+
+.map-status-badge.closed {
+  background-color: #ffebee;
+  color: #c62828;
+  border: 1px solid #c62828;
+}
+
+@media (max-width: 768px) {
+  .detail-image-container {
+    height: 200px;
+  }
+
+  .detail-title {
+    font-size: 1.5rem;
+  }
+
+  .detail-content {
+    padding: 0 15px 15px;
+  }
+
+  .detail-actions {
+    position: sticky;
+    bottom: 0;
+    background: white;
+    padding: 15px;
+    margin: 0 -15px;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .spot-detail-view {
+    max-height: calc(100vh - 150px);
+  }
 }
