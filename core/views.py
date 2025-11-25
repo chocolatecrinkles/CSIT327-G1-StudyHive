@@ -99,6 +99,46 @@ def upload_studyspot_image(image_file, spot_id):
 
 # ---------- AUTH / ACCOUNT VIEWS ----------
 
+def landing_view(request):
+    # If user is already logged in → send them to home
+    if request.user.is_authenticated:
+        return redirect("core:home")
+    query = request.GET.get("q", "").strip()
+    filter_by = request.GET.get("filter", "all")
+
+    study_spaces = StudySpot.objects.all()
+
+    # Search
+    if query:
+        study_spaces = study_spaces.filter(
+            Q(name__icontains=query)
+            | Q(location__icontains=query)
+            | Q(description__icontains=query)
+        )
+
+    # Filters
+    if filter_by == "wifi":
+        study_spaces = study_spaces.filter(wifi=True)
+    elif filter_by == "ac":
+        study_spaces = study_spaces.filter(ac=True)
+    elif filter_by == "outlets":
+        study_spaces = study_spaces.filter(outlets=True)
+    elif filter_by == "coffee":
+        study_spaces = study_spaces.filter(coffee=True)
+    elif filter_by == "pastries":
+        study_spaces = study_spaces.filter(pastries=True)
+    elif filter_by == "open24":
+        study_spaces = study_spaces.filter(open_24_7=True)
+    elif filter_by == "trending":
+        study_spaces = study_spaces.filter(is_trending=True)
+
+    context = {
+        "study_spaces": study_spaces,
+        "query": query,
+        "filter_by": filter_by,
+    }
+    return render(request, "landing.html", context)
+
 def login_view(request):
     if request.user.is_authenticated:
         return redirect("core:home")
