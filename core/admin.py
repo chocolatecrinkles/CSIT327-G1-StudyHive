@@ -34,7 +34,7 @@ class StudySpotAdmin(admin.ModelAdmin):
     search_fields = ("name", "location", "description")
     fieldsets = (
         (None, {
-            "fields": ("owner", "name", "location", "description", "image_url")
+            "fields": ("owner", "name", "location", "description")
         }),
         ("Amenities", {
             "fields": ("wifi", "open_24_7", "outlets", "coffee", "ac", "pastries")

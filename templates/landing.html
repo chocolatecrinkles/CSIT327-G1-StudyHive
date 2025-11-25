@@ -1,0 +1,279 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StudyHive | Find Your Perfect Study Space</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+      <div class="nav-container">
+        <div class="nav-brand">
+          <span class="brand-study">Study</span><span class="brand-hive">Hive</span>
+        </div>
+
+        <div class="nav-right">
+          <a href="{% url 'core:login' %}" class="sign-in-btn">
+            <i class="fas fa-user"></i> Sign In
+          </a>
+          <button class="burger-btn">
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+        </div>
+      </div>
+    </nav>
+
+
+  <!-- Hero Section - Enhanced -->
+  <section class="hero">
+    <div class="hero-container">
+      <div class="hero-content">
+        <span class="hero-badge">
+          <i class="fas fa-location-dot"></i>
+          Cebu's Best Study Spots
+        </span>
+        <h1 class="hero-heading">
+          Discover <span class="hero-highlight">Study Spaces</span><br>
+          That Fuel Your Focus
+        </h1>
+        <p class="hero-text">Find the perfect environment to learn, work, and grow. From cozy cafés to modern coworking spaces near CIT-U.</p>
+        
+        <form method="get" action="{% url 'core:landing' %}" class="hero-search">
+          <i class="fas fa-search"></i>
+          <input
+            type="text"
+            name="q"
+            id="mainSearch"
+            value="{{ query }}"
+            placeholder="Search cafés, libraries, coworking spaces..."
+          >
+          <button type="submit" class="search-btn">Search</button>
+        </form>
+
+        <div class="hero-stats">
+          <div class="stat-item">
+            <strong>11+</strong>
+            <span>Study Locations</span>
+          </div>
+          <div class="stat-item">
+            <strong>24/7</strong>
+            <span>Available Access</span>
+          </div>
+          <div class="stat-item">
+            <strong>Free</strong>
+            <span>WiFi Everywhere</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-visual">
+        <div class="visual-card">
+          <div class="visual-header">
+            <div class="visual-dots">
+              <span></span><span></span><span></span>
+            </div>
+            <span class="visual-title">Your Perfect Spot</span>
+          </div>
+          <div class="visual-content">
+            <div class="visual-main">
+              <img src="{% static 'imgs/hero-study.jpg' %}" 
+                  alt="Student studying"
+                  data-placeholder-src="{% static 'imgs/avatar_placeholder.jpg' %}"
+                  onerror="this.src=this.dataset.placeholderSrc; this.onerror=null;">
+              <div class="visual-overlay">
+                <h3>Find Your Focus Zone</h3>
+                <p>Productive spaces designed for students</p>
+              </div>
+            </div>
+            <div class="visual-tags">
+              <span><i class="fas fa-wifi"></i> Fast WiFi</span>
+              <span><i class="fas fa-bolt"></i> Power Outlets</span>
+              <span><i class="fas fa-mug-hot"></i> Coffee Shop</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating Elements -->
+    <div class="hero-float hero-float-1">
+      <i class="fas fa-book"></i>
+    </div>
+    <div class="hero-float hero-float-2">
+      <i class="fas fa-coffee"></i>
+    </div>
+    <div class="hero-float hero-float-3">
+      <i class="fas fa-laptop"></i>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features-section">
+    <div class="container">
+      <div class="section-header">
+        <h2>Why Students Love StudyHive</h2>
+        <p>Everything you need to find your ideal study environment</p>
+      </div>
+      
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-map-marked-alt"></i>
+          </div>
+          <h3>Smart Location Finder</h3>
+          <p>Discover study spots near you with real-time availability and ratings from fellow students.</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-star"></i>
+          </div>
+          <h3>Verified Reviews</h3>
+          <p>Read honest reviews from students who've actually studied there. No fake ratings.</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-filter"></i>
+          </div>
+          <h3>Advanced Filters</h3>
+          <p>Filter by WiFi speed, noise level, outlets, operating hours, and more to find your perfect match.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Filter Section -->
+  <section class="filters-section">
+    <div class="container">
+      <div class="filters-wrapper">
+        <div class="filter-item">
+          <label>Sort by</label>
+          <select id="sortSelect" disabled>
+            <option value="nearest">Nearest to You</option>
+            <option value="rating">Highest Rated</option>
+            <option value="name">Name (A-Z)</option>
+            <option value="popular">Most Popular</option>
+          </select>
+        </div>
+        
+        <div class="filter-tags">
+          <button class="tag active" data-filter="all" disabled>All Spots</button>
+          <button class="tag" data-filter="wifi" disabled><i class="fas fa-wifi"></i> WiFi</button>
+          <button class="tag" data-filter="outlets" disabled><i class="fas fa-plug"></i> Power Outlet</button>
+          <button class="tag" data-filter="coffee" disabled><i class="fas fa-mug-hot"></i> Café / Drinks</button>
+          <button class="tag" data-filter="pastries" disabled><i class="fas fa-bread-slice"></i> Pastries</button>
+          <button class="tag" data-filter="ac" disabled><i class="fas fa-snowflake"></i> AC</button>
+          <button class="tag" data-filter="open24" disabled><i class="fas fa-clock"></i> 24/7</button>
+          <button class="tag" data-filter="trending" disabled><i class="fas fa-fire"></i> Trending</button>
+        </div>
+
+        <div class="view-options">
+          <button class="view-opt active" data-view="grid" title="Grid View" disabled>
+            <i class="fas fa-grid-2"></i>
+          </button>
+          <button class="view-opt" data-view="list" title="List View" disabled>
+            <i class="fas fa-bars"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Listings -->
+  <section class="listings" id="exploreSection">
+    <div class="container">
+      <div class="listings-header">
+        <h2>Explore Study Spaces Near You</h2>
+        <p>{{ study_spaces.count }} amazing spaces available in Cebu</p>
+      </div>
+
+      <div class="cards-grid" id="cardsGrid">
+        {% for spot in study_spaces %}
+        <div class="spot-card" id="spot-{{ spot.id }}">
+          <div class="card-img-wrap" style="position: relative;">
+            {% if spot.image_url %}
+              <img src="{{ spot.image_url }}" alt="{{ spot.name }}">
+            {% else %}
+              <img src="{% static 'imgs/placeholder.png' %}" alt="Placeholder">
+            {% endif %}
+
+            <div class="card-badge">
+              <i class="fas fa-star"></i> {{ spot.average_rating|floatformat:1 }}
+            </div>
+
+            {% if spot.is_trending %}
+            <div class="trending-badge">
+              <i class="fas fa-fire"></i> Trending
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="card-info">
+            <h3>{{ spot.name }}</h3>
+            <p class="card-location">
+              <i class="fas fa-location-dot"></i>
+              {{ spot.location }}
+            </p>
+            <p class="card-desc">{{ spot.description|truncatewords:12 }}</p>
+            
+            <div class="card-amenities">
+              {% if spot.wifi %}
+                <span class="amenity" title="Free Wi-Fi"><i class="fas fa-wifi"></i></span>
+              {% endif %}
+              {% if spot.open_24_7 %}
+                <span class="amenity" title="Open 24/7"><i class="fas fa-clock"></i></span>
+              {% endif %}
+              {% if spot.outlets %}
+                <span class="amenity" title="Power Outlets"><i class="fas fa-plug"></i></span>
+              {% endif %}
+              {% if spot.coffee %}
+                <span class="amenity" title="Café / Drinks"><i class="fas fa-mug-hot"></i></span>
+              {% endif %}
+              {% if spot.ac %}
+                <span class="amenity" title="Air-conditioned"><i class="fas fa-snowflake"></i></span>
+              {% endif %}
+              {% if spot.pastries %}
+                <span class="amenity" title="Pastries"><i class="fas fa-bread-slice"></i></span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section">
+    <div class="container">
+      <div class="cta-content">
+        <h2>Ready to Find Your Perfect Study Spot?</h2>
+        <p>Join thousands of students who've discovered their ideal study environment through StudyHive.</p>
+        <div class="cta-buttons">
+          <a href="{% url 'core:login' %}" class="btn-primary">
+            <i class="fas fa-user"></i> Sign In
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script src="{% static 'js/landing.js' %}"></script>
+
+</body>
+</html>
