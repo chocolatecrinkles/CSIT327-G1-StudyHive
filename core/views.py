@@ -21,6 +21,7 @@ from .forms import (
 from django.conf import settings
 
 import os
+import uuid
 import json
 import time
 
@@ -69,11 +70,12 @@ def upload_studyspot_image(image_file, spot_id):
     if not image_file:
         return None
 
-    bucket_name = "study_spots"  
+    bucket_name = "study_spots"
 
-    # Build path: spots/<spot_id>/main.<ext>
+    # Unique file name per image
     ext = os.path.splitext(image_file.name)[1] or ".jpg"
-    path = f"spots/{spot_id}/main{ext}"
+    unique_name = f"{uuid.uuid4().hex}{ext}"
+    path = f"spots/{spot_id}/{unique_name}"
 
     try:
         image_file.seek(0)
@@ -86,13 +88,13 @@ def upload_studyspot_image(image_file, spot_id):
         )
 
         public_url = supabase.storage.from_(bucket_name).get_public_url(path)
-        # Optional cache-buster so browser sees updated image if overwritten
         public_url = f"{public_url}?v={int(time.time())}"
         return public_url
 
     except Exception as e:
         print(f"[StudySpot Image Upload Error] {e}")
         return None
+
 
 
 # ---------- AUTH / ACCOUNT VIEWS ----------
@@ -189,15 +191,18 @@ def map_view(request):
     query = request.GET.get("q", "")
     filter_by = request.GET.get("filter", "all")
 
+    # faster + cleaner
     study_spots = StudySpot.objects.all()
 
+    # Search
     if query:
         study_spots = study_spots.filter(
-            Q(name__icontains=query)
-            | Q(location__icontains=query)
-            | Q(description__icontains=query)
+            Q(name__icontains=query) |
+            Q(location__icontains=query) |
+            Q(description__icontains=query)
         )
 
+    # Filter
     if filter_by == "wifi":
         study_spots = study_spots.filter(wifi=True)
     elif filter_by == "ac":
@@ -210,7 +215,10 @@ def map_view(request):
     return render(
         request,
         "map_view.html",
-        {"study_spots": study_spots, "profile": profile},
+        {
+            "study_spots": study_spots,
+            "profile": profile
+        }
     )
 
 
@@ -340,41 +348,65 @@ def create_listing(request):
         name = request.POST.get("name")
         location = request.POST.get("location")
         description = request.POST.get("description")
+
+        
         wifi = request.POST.get("wifi") == "on"
         ac = request.POST.get("ac") == "on"
         free = request.POST.get("free") == "on"
         coffee = request.POST.get("coffee") == "on"
+        outlets = request.POST.get("outlets") == "on"
+        pastries = request.POST.get("pastries") == "on"
 
-        image_file = request.FILES.get("image")
+        
+        open_24_7 = request.POST.get("open_24_7") == "on"
+        opening_time = request.POST.get("opening_time")
+        closing_time = request.POST.get("closing_time")
 
-        # Create spot first (without image_url)
+        
+        lat = request.POST.get("lat")
+        lng = request.POST.get("lng")
+
+        
+        images_uploaded = request.FILES.getlist("images")
+
+        
         spot = StudySpot.objects.create(
             owner=request.user,
             name=name,
             location=location,
             description=description,
+
             wifi=wifi,
             ac=ac,
             free=free,
             coffee=coffee,
-            image_url=None,
+            outlets=outlets,
+            pastries=pastries,
+            open_24_7=open_24_7,
+
+            
+            opening_time=None if open_24_7 else opening_time,
+            closing_time=None if open_24_7 else closing_time,
+
+            lat=lat,
+            lng=lng,
         )
 
-        # Upload to Supabase
-        if image_file:
-            public_url = upload_studyspot_image(image_file, spot.id)
+        
+        uploaded_urls = []
+        for img in images_uploaded:
+            public_url = upload_studyspot_image(img, spot.id)
             if public_url:
-                spot.image_url = public_url
-                spot.save()
-            else:
-                messages.warning(
-                    request, "Listing created, but image upload failed."
-                )
+                uploaded_urls.append(public_url)
+
+        spot.images = uploaded_urls
+        spot.save()
 
         messages.success(request, "Listing successfully created!")
         return redirect("core:home")
 
     return render(request, "create_listing.html", {"profile": profile})
+
 
 
 @contributor_required

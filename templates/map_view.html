@@ -2,6 +2,7 @@
 {% load static %}
 {% block content %}
 
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
 <link rel="stylesheet" href="{% static 'css/map_view.css' %}">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -34,8 +35,7 @@
 
         <div class="dropdown-menu" id="userDropdown">
           <div class="dropdown-user">
-            <img src="{% if user.userprofile.avatar_url %}{{ user.userprofile.avatar_url }}
-{% else %}{% static 'imgs/avatar_placeholder.jpg' %}{% endif %}" alt="">
+            <img src="{% if user.userprofile.avatar_url %}{{ user.userprofile.avatar_url }}{% else %}{% static 'imgs/avatar_placeholder.jpg' %}{% endif %}" alt="">
             <div>
               <strong>{{ user.first_name }} {{ user.last_name }}</strong><br>
               <small>{{ user.email }}</small>
@@ -44,21 +44,20 @@
           <div class="dropdown-divider"></div>
 
           {% if user.userprofile.is_contributor %}
-                <a href="{% url 'core:profile' %}">👤 My Profile</a>
-                <a href="{% url 'core:my_listings' %}">📍 My Listings</a>
-                <a href="{% url 'core:create_listing' %}">➕ Create Listing</a>
-                <a href="#">⚙️ Settings</a>
-              {% else %}
-                <a href="{% url 'core:profile' %}">👤 My Profile</a>
-                <a href="#">🏆 Achievements</a>
-                <a href="{% url 'core:apply_staff' %}">💼 Become a Contributor</a>
-                <a href="#">⚙️ Settings</a>
-              {% endif %}
+            <a href="{% url 'core:profile' %}">👤 My Profile</a>
+            <a href="{% url 'core:my_listings' %}">📍 My Listings</a>
+            <a href="{% url 'core:create_listing' %}">➕ Create Listing</a>
+            <a href="#">⚙️ Settings</a>
+          {% else %}
+            <a href="{% url 'core:profile' %}">👤 My Profile</a>
+            <a href="#">🏆 Achievements</a>
+            <a href="{% url 'core:apply_staff' %}">💼 Become a Contributor</a>
+            <a href="#">⚙️ Settings</a>
+          {% endif %}
 
-              <div class="dropdown-divider"></div>
-              <a href="{% url 'core:logout' %}" class="logout-link" id="logoutLink">🚪 Logout</a>
-            </div>
-          </div>
+          <div class="dropdown-divider"></div>
+          <a href="{% url 'core:logout' %}" class="logout-link" id="logoutLink">🚪 Logout</a>
+        </div>
       </div>
     </div>
   </div>
@@ -95,7 +94,6 @@
 
     <div class="spot-list">
       {% for spot in study_spots %}
-
         <a href="{% url 'core:studyspot_detail' spot.id %}" 
            class="map-card-link"
            data-spot-id="{{ spot.id }}"
@@ -103,36 +101,57 @@
            data-location="{{ spot.location|escape }}"
            data-rating="{{ spot.average_rating|default_if_none:0|floatformat:1 }}"
            data-status="{% if spot.open_24_7 %}open{% else %}closed{% endif %}"
-           data-image="{% if spot.image_url %}{{ spot.image_url }}{% else %}{% static 'imgs/map_placeholder.jpg' %}{% endif %}"
+           data-image="{% if spot.images and spot.images.0 %}{{ spot.images.0 }}{% else %}{% static 'imgs/map_placeholder.jpg' %}{% endif %}"
            data-detail-url="{% url 'core:studyspot_detail' spot.id %}"
            data-wifi="{{ spot.wifi }}"
            data-open24="{{ spot.open_24_7 }}"
+           data-opening="{% if spot.opening_time %}{{ spot.opening_time|time:'H:i' }}{% endif %}"
+           data-closing="{% if spot.closing_time %}{{ spot.closing_time|time:'H:i' }}{% endif %}"
            data-outlets="{{ spot.outlets }}"
            data-coffee="{{ spot.coffee }}"
            data-ac="{{ spot.ac }}"
            data-pastries="{{ spot.pastries }}"
-           data-trending="{{ spot.is_trending }}">
-          
+           data-trending="{{ spot.is_trending }}"
+           data-lat="{{ spot.lat }}"
+           data-lng="{{ spot.lng }}">
+
           <div class="spot-card">
             <div class="spot-image">
-...
-              {% if spot.image_url %}
-                <img src="{{ spot.image_url }}" alt="{{ spot.name }}">
-              {% else %}
-                <img src="{% static 'imgs/map_placeholder.jpg' %}" alt="Placeholder image">
-              {% endif %}
 
-  
-              <span class="status-badge {% if spot.open_24_7 %}open{% else %}closed{% endif %}">
-                {% if spot.open_24_7 %}Open{% else %}Closed{% endif %}
+              {# --- IMAGE / CAROUSEL LOGIC --- #}
+              {% with images=spot.images %}
+                {% if images and images|length > 1 %}
+                  <div class="spot-image-carousel" data-spot-id="{{ spot.id }}">
+                    {% for img in images %}
+                      <img src="{{ img }}" alt="{{ spot.name }}" class="carousel-image{% if forloop.first %} active{% endif %}">
+                    {% endfor %}
+                    <button class="carousel-btn prev" type="button">
+                      <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button class="carousel-btn next" type="button">
+                      <i class="fas fa-chevron-right"></i>
+                    </button>
+                  </div>
+                {% elif images and images|length == 1 %}
+                  <img src="{{ images.0 }}" alt="{{ spot.name }}">
+                {% else %}
+                  <img src="{% static 'imgs/map_placeholder.jpg' %}" alt="Placeholder image">
+                {% endif %}
+              {% endwith %}
+
+              <span class="map-status-badge status-init"
+                    data-open24="{% if spot.open_24_7 %}true{% else %}false{% endif %}"
+                    data-opening="{% if spot.opening_time %}{{ spot.opening_time|time:'H:i' }}{% endif %}"
+                    data-closing="{% if spot.closing_time %}{{ spot.closing_time|time:'H:i' }}{% endif %}"
+                    data-label="{{ spot.status_display|default:'Closed' }}">
+                {{ spot.status_display|default:'Closed' }}
               </span>
-  
+
               {% if spot.is_trending %}
-              <span class="trending-badge-map">
-                <i class="fas fa-fire"></i> Trending
-              </span>
+                <span class="trending-badge-map"><i class="fas fa-fire"></i> Trending</span>
               {% endif %}
             </div>
+
             <div class="spot-content">
               <h3>{{ spot.name }}</h3>
               <div class="spot-location">
@@ -148,7 +167,7 @@
               </div>
             </div>
           </div>
-        </a> 
+        </a>
       {% empty %}
         <p class="no-spots">No study spots found yet.</p>
       {% endfor %}
@@ -157,40 +176,9 @@
 
   <main class="map-area" role="main" aria-label="Interactive Map Display">
     <div class="map-container">
-      <img src="{% static 'imgs/map_placeholder.jpg' %}" class="map-bg" alt="Interactive map">
+      <div id="map" style="width: 100%; height: 100%; z-index: 1;"></div>
       
       <div class="map-overlays">
-        <div class="map-markers">
-          <div class="map-marker" data-spot-id="spot1" style="top: 35%; left: 25%;">
-            <div class="marker-pin">
-              <i class="fas fa-book-open"></i>
-              <span class="marker-status open">Open</span>
-              <div class="marker-shadow"></div>
-            </div>
-          </div>
-          <div class="map-marker" data-spot-id="spot2" style="top: 42%; left: 35%;">
-            <div class="marker-pin">
-              <i class="fas fa-coffee"></i>
-              <span class="marker-status closed">Closed</span>
-              <div class="marker-shadow"></div>
-            </div>
-          </div>
-          <div class="map-marker" data-spot-id="spot3" style="top: 28%; left: 45%;">
-            <div class="marker-pin">
-              <i class="fas fa-book"></i>
-              <span class="marker-status open">Open</span>
-              <div class="marker-shadow"></div>
-            </div>
-          </div>
-          <div class="map-marker" data-spot-id="spot4" style="top: 55%; left: 28%;">
-            <div class="marker-pin">
-              <i class="fas fa-mug-hot"></i>
-              <span class="marker-status open">Open</span>
-              <div class="marker-shadow"></div>
-            </div>
-          </div>
-        </div>
-
         <div class="map-menu-dropdown">
           <button id="menuDots" class="control-btn" aria-expanded="false" aria-controls="dropdownMenu" title="More Options">
             <i class="fas fa-ellipsis-v"></i>
@@ -218,7 +206,7 @@
         </div>
 
         <div class="location-btn">
-          <button class="control-btn" aria-label="Center on my location">
+          <button class="control-btn" id="locationBtn" aria-label="Center on my location">
             <i class="fas fa-location-arrow"></i>
           </button>
         </div>
@@ -356,6 +344,8 @@
     <button class="btn-primary" id="applyFiltersBtn">Apply Filters</button>
   </div>
 </div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script src="{% static 'js/map_view.js' %}"></script>
 

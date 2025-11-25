@@ -27,8 +27,9 @@ class StudySpot(models.Model):
     free = models.BooleanField(default=False)
     coffee = models.BooleanField(default=False)
 
-    # ONLY ONE image_url
-    image_url = models.CharField(max_length=500, blank=True, null=True)
+    images = models.JSONField(default=list, blank=True)
+    lat = models.FloatField(null=True, blank=True)
+    lng = models.FloatField(null=True, blank=True)
 
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='listings')
 
@@ -37,16 +38,15 @@ class StudySpot(models.Model):
     pastries = models.BooleanField(default=False)
     is_trending = models.BooleanField(default=False)
 
+    opening_time = models.TimeField(null=True, blank=True)
+    closing_time = models.TimeField(null=True, blank=True)
+
     average_rating = models.DecimalField(max_digits=3, decimal_places=2, default=0.00)
 
     def update_average_rating(self):
         average = self.reviews.aggregate(Avg('rating'))['rating__avg']
         self.average_rating = round(average or 0, 2)
         self.save()
-
-
-
-
 
 
 class StaffApplication(models.Model):
