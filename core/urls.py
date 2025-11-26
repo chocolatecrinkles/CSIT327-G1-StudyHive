@@ -1,4 +1,5 @@
 from django.urls import path
+from django.contrib.auth import views as auth_views
 from . import views
 
 app_name = 'core'
@@ -11,6 +12,35 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('register/', views.register_view, name='register'),
+
+    # Password Reset URLs (note: no namespace prefix needed here)
+    path('password-reset/', 
+         auth_views.PasswordResetView.as_view(
+             template_name='password_reset.html',
+             email_template_name='password_reset_email.html',  # We'll create this
+             success_url='/password-reset/done/'  # Use explicit URL
+         ), 
+         name='password_reset'),
+    
+    path('password-reset/done/', 
+         auth_views.PasswordResetDoneView.as_view(
+             template_name='password_reset_done.html'
+         ), 
+         name='password_reset_done'),
+    
+    path('reset/<uidb64>/<token>/',  # Simplified URL pattern
+         auth_views.PasswordResetConfirmView.as_view(
+             template_name='password_reset_confirm.html',
+             success_url='/password-reset/complete/'  # Use explicit URL
+         ), 
+         name='password_reset_confirm'),
+    
+    path('password-reset/complete/', 
+         auth_views.PasswordResetCompleteView.as_view(
+             template_name='password_reset_complete.html'
+         ), 
+         name='password_reset_complete'),
+
 
     # Profiles
     path('profile/', views.profile_view, name='profile'),
