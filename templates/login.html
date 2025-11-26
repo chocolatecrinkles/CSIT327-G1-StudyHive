@@ -69,7 +69,7 @@
         </button>
 
         <div class="flex items-center justify-between text-xs text-slate-500">
-          <a class="hover:text-slate-700" href="#">Forgot password?</a>
+            <a class="hover:text-slate-700" href="{% url 'core:password_reset' %}">Forgot password?</a>
           <a class="hover:text-slate-700" href="{% url 'core:register' %}">Create Account</a>
         </div>
 
