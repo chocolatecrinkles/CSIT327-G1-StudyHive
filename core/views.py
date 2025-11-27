@@ -460,35 +460,60 @@ def edit_listing(request, spot_id):
     profile = UserProfile.objects.get(user=request.user)
     spot = get_object_or_404(StudySpot, id=spot_id)
 
+    # safety: only owner can edit
+    if spot.owner != request.user:
+        raise PermissionDenied("You are not authorized to edit this listing.")
+
     if request.method == "POST":
-        name = request.POST.get("name")
-        location = request.POST.get("location")
-        description = request.POST.get("description")
-        wifi = request.POST.get("wifi") == "on"
-        ac = request.POST.get("ac") == "on"
-        free = request.POST.get("free") == "on"
-        coffee = request.POST.get("coffee") == "on"
+        # ---------- BASIC FIELDS ----------
+        spot.name = request.POST.get("name", spot.name)
+        spot.location = request.POST.get("location", spot.location)
+        spot.description = request.POST.get("description", spot.description)
 
-        image_file = request.FILES.get("image")
+        # ---------- AMENITIES ----------
+        spot.wifi = request.POST.get("wifi") == "on"
+        spot.ac = request.POST.get("ac") == "on"
+        spot.free = request.POST.get("free") == "on"
+        spot.coffee = request.POST.get("coffee") == "on"
+        spot.outlets = request.POST.get("outlets") == "on"
+        spot.pastries = request.POST.get("pastries") == "on"
+        spot.open_24_7 = request.POST.get("open_24_7") == "on"
 
-        spot.name = name
-        spot.location = location
-        spot.description = description
-        spot.wifi = wifi
-        spot.ac = ac
-        spot.free = free
-        spot.coffee = coffee
+        # ---------- OPENING HOURS ----------
+        if spot.open_24_7:
+            spot.opening_time = None
+            spot.closing_time = None
+        else:
+            opening_time = request.POST.get("opening_time") or None
+            closing_time = request.POST.get("closing_time") or None
+            spot.opening_time = opening_time
+            spot.closing_time = closing_time
 
-        if image_file:
-            public_url = upload_studyspot_image(image_file, spot.id)
-            if public_url:
-                spot.image_url = public_url
-            else:
-                messages.warning(
-                    request, "Details updated, but image upload failed."
-                )
+        # ---------- LOCATION (LAT / LNG) ----------
+        lat = request.POST.get("lat")
+        lng = request.POST.get("lng")
+        if lat:
+            spot.lat = lat
+        if lng:
+            spot.lng = lng
+
+        # ---------- IMAGES (MULTIPLE, JUST LIKE create_listing) ----------
+        # input name="images" with multiple
+        images_uploaded = request.FILES.getlist("images")
+
+        if images_uploaded:
+            uploaded_urls = []
+            for img in images_uploaded:
+                public_url = upload_studyspot_image(img, spot.id)
+                if public_url:
+                    uploaded_urls.append(public_url)
+
+            if uploaded_urls:
+                spot.images = uploaded_urls
+                spot.image_url = uploaded_urls[0]
 
         spot.save()
+        messages.success(request, "Listing updated successfully.")
         return redirect("core:my_listings")
 
     return render(
@@ -496,6 +521,7 @@ def edit_listing(request, spot_id):
         "edit_listing.html",
         {"spot": spot, "profile": profile},
     )
+
 
 
 @contributor_required

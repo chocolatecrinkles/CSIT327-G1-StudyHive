@@ -6,131 +6,323 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Edit Listing | StudyHive</title>
 
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Nunito+Sans:wght@400;700&display=swap" rel="stylesheet">
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- Icons -->
   <script src="https://kit.fontawesome.com/a2d9d5c6b2.js" crossorigin="anonymous"></script>
 
-  <link rel="stylesheet" href="{% static 'css/listings_shared.css' %}">
+  <!-- Page CSS -->
+  <link rel="stylesheet" href="{% static 'css/edit_listing.css' %}">
 </head>
 
-<body style="background-color: #203730; font-family: 'Poppins', sans-serif; color: #dceedd;">
-  <div class="listing-page">
+<body>
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <!-- Centered Header -->
-    <header class="header-bar" style="text-align: center; margin-top: 2rem;">
-      <a href="{% url 'core:home' %}" class="logo" style="font-size: 2rem; text-decoration: none; color: #b1ffad;">
+  <!-- Decorative Background Elements -->
+  <div class="bg-decoration"></div>
+
+  <div class="create-page">
+
+    <!-- Top Header -->
+    <header class="header-bar">
+      <a href="{% url 'core:home' %}" class="logo">
+        <i class="fas fa-book-reader logo-icon"></i>
         <span class="brand-study">Study</span><span class="brand-hive">Hive</span>
       </a>
-      <p style="margin-top: 0.3rem; color: #a9e8a5; font-weight: 600;">✏️ Edit Listing</p>
-      <a href="{% url 'core:my_listings' %}" class="back-button" aria-label="Back to Listings"
-         style="display: inline-block; margin-top: 1rem; border: 1px solid #b1ffad; color: #b1ffad; padding: 0.4rem 1rem; border-radius: 8px; text-decoration: none;">
-         <i class="fas fa-arrow-left"></i> Back to My Listings
+      <a href="{% url 'core:my_listings' %}" class="back-button">
+        <i class="fas fa-arrow-left"></i> 
+        <span>Back to My Listings</span>
       </a>
     </header>
 
-    <!-- Form -->
-    <main class="listing-container" style="margin-top: 2rem;">
-      <form method="POST" enctype="multipart/form-data">
+    <!-- MAIN FORM -->
+    <main class="form-container">
+      
+      <!-- Header Section -->
+      <div class="form-header">
+        <div class="form-header-icon">
+          <i class="fas fa-edit"></i>
+        </div>
+        <h1 class="page-title">Edit Listing</h1>
+        <p class="page-subtitle">Update your study space details</p>
+      </div>
+
+      <!-- IMPORTANT: data-spot-id used by JS for Supabase path -->
+      <form method="POST" enctype="multipart/form-data" class="listing-form" data-spot-id="{{ spot.id }}">
         {% csrf_token %}
 
+        <!-- Study Space Name -->
         <div class="form-group">
-          <label for="name">Study Space Name</label>
-          <input type="text" name="name" id="name" value="{{ spot.name }}" class="form-control" required>
+          <label for="name">
+            <i class="fas fa-home"></i> 
+            <span>Study Space Name</span>
+            <span class="required-badge">Required</span>
+          </label>
+          <input 
+            type="text" 
+            id="name" 
+            name="name" 
+            value="{{ spot.name }}"
+            placeholder="e.g., Cozy Corner Café"
+            required
+          >
         </div>
 
+        <!-- Location Picker -->
         <div class="form-group">
-          <label for="location">Location</label>
-          <input type="text" name="location" id="location" value="{{ spot.location }}" class="form-control" required>
+          <label for="location">
+            <i class="fas fa-map-marker-alt"></i> 
+            <span>Exact Location</span>
+            <span class="required-badge">Required</span>
+          </label>
+
+          <div class="location-input-wrapper">
+            <input 
+              type="text" 
+              id="location" 
+              name="location" 
+              value="{{ spot.location }}"
+              placeholder="Click the pin button to select location"
+              readonly 
+              required
+            >
+
+            <button type="button" id="openMapPicker" class="location-pin-btn" title="Pick location on map">
+              <i class="fas fa-map-marked-alt"></i>
+              <span class="btn-text">Pick Location</span>
+            </button>
+          </div>
+          <small class="input-hint">
+            <i class="fas fa-info-circle"></i> 
+            Click the pin button to select the exact location on the map
+          </small>
         </div>
 
+        <!-- Hidden Lat & Lng -->
+        <input type="hidden" name="lat" id="lat" value="{{ spot.lat }}">
+        <input type="hidden" name="lng" id="lng" value="{{ spot.lng }}">
+
+        <!-- Description -->
         <div class="form-group">
-          <label for="description">Description</label>
-          <textarea name="description" id="description" rows="4" class="form-control" required>{{ spot.description }}</textarea>
+          <label for="description">
+            <i class="fas fa-align-left"></i> 
+            <span>Description</span>
+            <span class="required-badge">Required</span>
+          </label>
+          <textarea 
+            id="description" 
+            name="description" 
+            rows="5" 
+            placeholder="Describe what makes this study space special..."
+            required
+          >{{ spot.description }}</textarea>
+          <small class="input-hint">
+            <i class="fas fa-lightbulb"></i> 
+            Include details about atmosphere, noise level, seating capacity, etc.
+          </small>
         </div>
 
-
-
-
-        <div class="form-group">
-  <label>Image</label>
-
-  {% if spot.image_url %}
-    <img src="{{ spot.image_url }}" alt="{{ spot.name }}" 
-         style="width:100%;border-radius:8px;margin-bottom:1rem;">
-  {% endif %}
-
-  <!-- File input (upload to Supabase via JS) -->
-  <input type="file" id="image_file" class="form-control">
-
-  <!-- Hidden field where Supabase URL will be stored -->
-  <input type="hidden" name="image_url" id="image_url" value="{{ spot.image_url }}">
-</div>
-
-
-
-
-        <div class="form-group">
-          <label><i class="fas fa-wifi"></i> Amenities</label>
+        <!-- Amenities -->
+        <div class="form-group amenities-group">
+          <label class="section-label">
+            <i class="fas fa-star"></i> 
+            <span>Amenities</span>
+          </label>
+          <p class="section-description">Select all amenities available at this location</p>
+          
           <div class="chip-group">
-            <input type="checkbox" id="wifi" name="wifi" {% if spot.wifi %}checked{% endif %}>
-            <label for="wifi">Free Wi-Fi</label>
+            <div class="chip-wrapper">
+              <input type="checkbox" id="wifi" name="wifi" {% if spot.wifi %}checked{% endif %}>
+              <label for="wifi">
+                <i class="fas fa-wifi"></i>
+                <span>Free Wi-Fi</span>
+              </label>
+            </div>
 
-            <input type="checkbox" id="open_24_7" name="open_24_7" {% if spot.open_24_7 %}checked{% endif %}>
-            <label for="open_24_7">Open 24/7</label>
+            <div class="chip-wrapper">
+              <input type="checkbox" id="open_24_7" name="open_24_7" {% if spot.open_24_7 %}checked{% endif %}>
+              <label for="open_24_7">
+                <i class="fas fa-clock"></i>
+                <span>Open 24/7</span>
+              </label>
+            </div>
 
-            <input type="checkbox" id="outlets" name="outlets" {% if spot.outlets %}checked{% endif %}>
-            <label for="outlets">Power Outlets</label>
+            <div class="chip-wrapper">
+              <input type="checkbox" id="outlets" name="outlets" {% if spot.outlets %}checked{% endif %}>
+              <label for="outlets">
+                <i class="fas fa-plug"></i>
+                <span>Power Outlets</span>
+              </label>
+            </div>
 
-            <input type="checkbox" id="coffee" name="coffee" {% if spot.coffee %}checked{% endif %}>
-            <label for="coffee">Café / Drinks</label>
+            <div class="chip-wrapper">
+              <input type="checkbox" id="coffee" name="coffee" {% if spot.coffee %}checked{% endif %}>
+              <label for="coffee">
+                <i class="fas fa-coffee"></i>
+                <span>Café / Drinks</span>
+              </label>
+            </div>
 
-            <input type="checkbox" id="ac" name="ac" {% if spot.ac %}checked{% endif %}>
-            <label for="ac">Air-conditioned</label>
+            <div class="chip-wrapper">
+              <input type="checkbox" id="ac" name="ac" {% if spot.ac %}checked{% endif %}>
+              <label for="ac">
+                <i class="fas fa-snowflake"></i>
+                <span>Air-conditioned</span>
+              </label>
+            </div>
 
-            <input type="checkbox" id="pastries" name="pastries" {% if spot.pastries %}checked{% endif %}>
-            <label for="pastries">Pastries</label>
+            <div class="chip-wrapper">
+              <input type="checkbox" id="pastries" name="pastries" {% if spot.pastries %}checked{% endif %}>
+              <label for="pastries">
+                <i class="fas fa-cookie-bite"></i>
+                <span>Pastries</span>
+              </label>
+            </div>
           </div>
         </div>
 
-        <div class="form-actions" style="text-align:center; margin-top:2rem;">
-          <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Save Changes</button>
-          <a href="{% url 'core:my_listings' %}" class="btn-secondary">Cancel</a>
+        <!-- Opening Hours -->
+        <div class="form-group hours-group" id="hoursGroup">
+          <label class="section-label">
+            <i class="fas fa-clock"></i> 
+            <span>Opening Hours</span>
+          </label>
+          <p class="section-description">Specify when the place is open</p>
+
+          <div class="hours-wrapper">
+            <div class="hours-input">
+              <label>Opens At</label>
+              <input type="time" id="opening_time" name="opening_time" value="{{ spot.opening_time }}">
+            </div>
+
+            <div class="hours-input">
+              <label>Closes At</label>
+              <input type="time" id="closing_time" name="closing_time" value="{{ spot.closing_time }}">
+            </div>
+          </div>
         </div>
+
+        <!-- Images Upload -->
+        <div class="form-group images-group">
+          <label for="image-upload" class="section-label">
+            <i class="fas fa-images"></i> 
+            <span>Photos</span>
+          </label>
+          <p class="section-description">Upload multiple images to showcase the space</p>
+          
+          <!-- Current Images Display -->
+          {% if spot.image_url %}
+          <div class="current-images-section">
+            <h4 class="current-images-title">
+              <i class="fas fa-image"></i> Current Images
+            </h4>
+            <div class="current-images-grid">
+              <div class="current-image-item">
+                <img src="{{ spot.image_url }}" alt="{{ spot.name }}">
+                <div class="current-image-overlay">
+                  <span>Current Image</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          
+          <label for="image-upload" class="file-upload-label">
+            <div class="upload-icon">
+              <i class="fas fa-cloud-upload-alt"></i>
+            </div>
+            <div class="upload-text">
+              <span class="upload-title">Click to upload new images</span>
+              <span class="upload-subtitle">or drag and drop</span>
+            </div>
+            <span class="upload-note">PNG, JPG up to 10MB</span>
+          </label>
+          
+          <input type="file" id="image-upload" name="images" accept="image/*" multiple>
+          <!-- first / main image url -->
+          <input type="hidden" name="image_url" id="image_url" value="{{ spot.image_url }}">
+          <!-- NEW: JSON list for StudySpot.images so My Listings sees updates -->
+          <input type="hidden" name="images_json" id="images_json">
+
+          <div id="image-preview-container" class="image-preview-grid"></div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="form-actions">
+          <a href="{% url 'core:my_listings' %}" class="cancel-btn">
+            <i class="fas fa-times"></i>
+            <span>Cancel</span>
+          </a>
+          <button type="submit" class="submit-btn">
+            <i class="fas fa-check-circle"></i> 
+            <span>Save Changes</span>
+          </button>
+        </div>
+
       </form>
     </main>
   </div>
 
+  <!-- Map Modal -->
+  <div id="mapModal" class="map-modal">
+    <div class="map-modal-overlay"></div>
+    
+    <div class="map-modal-content">
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-const SUPABASE_URL = "{{ SUPABASE_URL }}";
-const SUPABASE_KEY = "{{ SUPABASE_KEY }}";
-const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      <button class="map-close-btn" id="closeMapModal" title="Close">
+        &times;
+      </button>
 
-document.getElementById("image_file").addEventListener("change", async function(e){
-    const file = e.target.files[0];
-    if (!file) return;
+      <div class="map-modal-header">
+        <div class="map-header-icon">
+          <i class="fas fa-map-pin"></i>
+        </div>
+        <div class="map-header-text">
+          <h3 class="map-title" id="mapSelectedTitle">Select Location</h3>
+          <p class="map-subtitle">Search or click on the map to pinpoint the exact location</p>
+        </div>
+      </div>
 
-    const path = `studyspots/${Date.now()}_${file.name}`;
+      <div class="search-wrapper">
+        <div class="search-input-container">
+          <i class="fas fa-search search-icon"></i>
+          <input 
+            type="text" 
+            id="mapSearchInput" 
+            placeholder="Search for a location in Cebu City..."
+            class="map-search-input"
+          >
+        </div>
+        <div id="mapSearchResults" class="map-search-results"></div>
+      </div>
 
-    let { data, error } = await client.storage
-      .from("studyspots")
-      .upload(path, file);
+      <div class="map-container">
+        <div id="mapPicker"></div>
+        <div class="map-instructions">
+          <i class="fas fa-hand-pointer"></i>
+          <span>Click anywhere on the map to set location</span>
+        </div>
+      </div>
 
-    if (error) {
-        alert("Upload failed: " + error.message);
-        return;
-    }
+      <button id="saveMapLocation" class="map-save-btn">
+        <i class="fas fa-check"></i>
+        <span>Confirm Location</span>
+      </button>
+    </div>
+  </div>
 
-    const { data: urlData } = client.storage
-      .from("studyspots")
-      .getPublicUrl(path);
-
-    document.getElementById("image_url").value = urlData.publicUrl;
-});
-</script>
-
-
-
+  <!-- Supabase config for JS -->
+  <script>
+    const SUPABASE_URL = "{{ SUPABASE_URL }}";
+    const SUPABASE_KEY = "{{ SUPABASE_KEY }}";
+  </script>
+  <script src="{% static 'js/edit_listing.js' %}"></script>
 
 </body>
 </html>

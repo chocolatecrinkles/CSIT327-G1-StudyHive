@@ -200,6 +200,15 @@ document.addEventListener("DOMContentLoaded", () => {
       : "closed";
   }
 
+  function formatTime24To12(timeStr) {
+      if (!timeStr) return "";
+      const [h, m] = timeStr.split(":").map(Number);
+      const suffix = h >= 12 ? "PM" : "AM";
+      const hour12 = ((h + 11) % 12) + 1;
+      return `${hour12}:${m.toString().padStart(2, "0")} ${suffix}`;
+    }
+
+
   // =========================
   // 5. SPOT DATA REGISTRATION
   // =========================
@@ -288,103 +297,113 @@ document.addEventListener("DOMContentLoaded", () => {
   // =========================
   // 7. SIDEBAR DETAIL VIEW
   // =========================
-  function createDetailSidebar(spotId) {
-    const spot = spotDataMap.get(spotId);
-    if (!spot) return;
+function createDetailSidebar(spotId) {
+  const spot = spotDataMap.get(spotId);
+  if (!spot) return;
 
-    const sidebarHeader = mapSidebar.querySelector(".sidebar-header");
-    const sidebarSearch = mapSidebar.querySelector(".sidebar-search");
-    const chipFilters = mapSidebar.querySelector(".chip-filters");
-    const spotList = mapSidebar.querySelector(".spot-list");
-    const existingDetail = mapSidebar.querySelector(".spot-detail-view");
+  const sidebarHeader = mapSidebar.querySelector(".sidebar-header");
+  const sidebarSearch = mapSidebar.querySelector(".sidebar-search");
+  const chipFilters = mapSidebar.querySelector(".chip-filters");
+  const spotList = mapSidebar.querySelector(".spot-list");
+  const existingDetail = mapSidebar.querySelector(".spot-detail-view");
 
-    if (existingDetail) existingDetail.remove();
+  if (existingDetail) existingDetail.remove();
 
-    sidebarSearch.style.display = "none";
-    chipFilters.style.display = "none";
-    spotList.style.display = "none";
+  sidebarSearch.style.display = "none";
+  chipFilters.style.display = "none";
+  spotList.style.display = "none";
 
-    sidebarHeader.innerHTML = `
-      <button id="backToListBtn" class="icon-btn">
-        <i class="fas fa-arrow-left"></i>
-      </button>
-      <div class="sidebar-title">
-        <h2>Study Spot Details</h2>
-        <p>View information</p>
+  sidebarHeader.innerHTML = `
+    <button id="backToListBtn" class="icon-btn">
+      <i class="fas fa-arrow-left"></i>
+    </button>
+    <div class="sidebar-title">
+      <h2>Study Spot Details</h2>
+      <p>View information</p>
+    </div>
+  `;
+
+  // 👉 only show hours if NOT 24/7 and both times exist
+  const hasHours =
+    !spot.amenities.open24 && spot.opening && spot.closing;
+
+  const hoursMarkup = hasHours
+    ? `
+      <div class="detail-hours">
+        <i class="fas fa-clock"></i>
+        <span>${formatTime24To12(spot.opening)} – ${formatTime24To12(spot.closing)}</span>
       </div>
-    `;
+    `
+    : ""; // 24/7: nothing shown
 
-    const detailView = document.createElement("div");
-    detailView.className = "spot-detail-view";
-    detailView.innerHTML = `
-      <div class="detail-image-container">
-        <!-- this placeholder will be replaced by a carousel or a single img -->
-        <div class="detail-carousel-slot"></div>
+  const detailView = document.createElement("div");
+  detailView.className = "spot-detail-view";
+  detailView.innerHTML = `
+    <div class="detail-image-container">
+      <div class="detail-carousel-slot"></div>
 
-        <span class="detail-status-badge ${spot.status}">
-          ${spot.status === "open" ? "Open" : "Closed"}
-        </span>
-        ${
-          spot.amenities.trending
-            ? '<span class="detail-trending-badge"><i class="fas fa-fire"></i> Trending</span>'
-            : ""
-        }
+      <span class="detail-status-badge ${spot.status}">
+        ${spot.status === "open" ? "Open" : "Closed"}
+      </span>
+      ${
+        spot.amenities.trending
+          ? '<span class="detail-trending-badge"><i class="fas fa-fire"></i> Trending</span>'
+          : ""
+      }
+    </div>
+    
+    <div class="detail-content">
+      <h2 class="detail-title">${spot.name}</h2>
+      
+      <div class="detail-rating">
+        <span class="detail-rating-value">${spot.rating.toFixed(1)}</span>
+        <div class="detail-rating-stars"></div>
       </div>
       
-      <div class="detail-content">
-        <h2 class="detail-title">${spot.name}</h2>
-        
-        <div class="detail-rating">
-          <span class="detail-rating-value">${spot.rating.toFixed(1)}</span>
-          <div class="detail-rating-stars"></div>
-        </div>
-        
-        <div class="detail-location">
-          <i class="fas fa-map-marker-alt"></i>
-          <span>${spot.location}</span>
-        </div>
-        
-        <div class="detail-amenities">
-          <h3>Amenities</h3>
-          <div class="detail-tags">
-            ${spot.tags
-              .map((tagKey) => {
-                const def = amenityDefinitions[tagKey];
-                return def
-                  ? `<span><i class="fas ${def.icon}"></i> ${def.label}</span>`
-                  : "";
-              })
-              .filter(Boolean)
-              .join("")}
-          </div>
-        </div>
-        
-        <div class="detail-actions">
-          <button class="btn-primary detail-view-full" onclick="window.location.href='${spot.detailUrl}'">
-            View Full Details
-          </button>
-          <button class="btn-secondary detail-get-directions">
-            <i class="fas fa-directions"></i> Get Directions
-          </button>
+      <div class="detail-location">
+        <i class="fas fa-map-marker-alt"></i>
+        <span>${spot.location}</span>
+      </div>
+
+      ${hoursMarkup}
+      
+      <div class="detail-amenities">
+        <h3>Amenities</h3>
+        <div class="detail-tags">
+          ${spot.tags
+            .map((tagKey) => {
+              const def = amenityDefinitions[tagKey];
+              return def
+                ? `<span><i class="fas ${def.icon}"></i> ${def.label}</span>`
+                : "";
+            })
+            .filter(Boolean)
+            .join("")}
         </div>
       </div>
-    `;
+      
+      <div class="detail-actions">
+        <button class="btn-primary detail-view-full" onclick="window.location.href='${spot.detailUrl}'">
+          View Full Details
+        </button>
+        <button class="btn-secondary detail-get-directions">
+          <i class="fas fa-directions"></i> Get Directions
+        </button>
+      </div>
+    </div>
+  `;
 
     spotList.parentNode.insertBefore(detailView, spotList.nextSibling);
 
     const slot = detailView.querySelector(".detail-carousel-slot");
     if (slot) {
-      // Try to clone the carousel from the original card, if it exists
       const cardCarousel = spot.card?.querySelector(".spot-image-carousel");
-
       if (cardCarousel) {
         const clone = cardCarousel.cloneNode(true);
         clone.classList.add("detail-carousel");
         slot.replaceWith(clone);
-        // Initialize carousel behaviour for this newly added carousel
         initSpotImageCarousels(detailView);
       } else {
-        // Fallback: just show the single image
         slot.outerHTML = `
           <img src="${spot.image}" alt="${spot.name}" class="detail-image">
         `;
@@ -416,6 +435,7 @@ document.addEventListener("DOMContentLoaded", () => {
     sidebarMode = "detail";
     currentDetailSpotId = spotId;
   }
+
 
   function returnToListView() {
     const sidebarHeader = mapSidebar.querySelector(".sidebar-header");
