@@ -2037,3 +2037,18 @@ body {
     max-height: calc(100vh - 150px);
   }
 }
+
+.detail-hours {
+  display: flex;
+  margin-left: 15px;
+  margin-bottom: 25px;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+  color: #555;
+  font-size: 0.9rem;
+}
+
+.detail-hours i {
+  color: #6c63ff;
+}

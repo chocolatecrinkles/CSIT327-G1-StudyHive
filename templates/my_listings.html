@@ -6,57 +6,205 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My Listings | StudyHive</title>
 
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Nunito+Sans:wght@400;700&display=swap" rel="stylesheet">
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- Icons -->
   <script src="https://kit.fontawesome.com/a2d9d5c6b2.js" crossorigin="anonymous"></script>
 
-  <link rel="stylesheet" href="{% static 'css/listings_shared.css' %}">
+  <!-- Page CSS -->
+  <link rel="stylesheet" href="{% static 'css/my_listings.css' %}">
 </head>
 
-<body style="background-color: #203730; font-family: 'Poppins', sans-serif; color: #dceedd;">
-  <div class="listing-page">
+<body>
+  <!-- Decorative Background Elements -->
+  <div class="bg-decoration"></div>
 
-    <!-- Centered Header -->
-    <header class="header-bar" style="text-align: center; margin-top: 2rem;">
-      <a href="{% url 'core:home' %}" class="logo" style="font-size: 2rem; text-decoration: none; color: #b1ffad;">
+  <div class="listings-page">
+
+    <!-- Top Header -->
+    <header class="header-bar">
+      <a href="{% url 'core:home' %}" class="logo">
+        <i class="fas fa-book-reader logo-icon"></i>
         <span class="brand-study">Study</span><span class="brand-hive">Hive</span>
       </a>
-      <p style="margin-top: 0.3rem; color: #a9e8a5; font-weight: 600;">📍 My Listings</p>
-      <a href="{% url 'core:home' %}" class="back-button" aria-label="Back to Home"
-         style="display: inline-block; margin-top: 1rem; border: 1px solid #b1ffad; color: #b1ffad; padding: 0.4rem 1rem; border-radius: 8px; text-decoration: none;">
-         <i class="fas fa-arrow-left"></i> Back to Home
+      <a href="{% url 'core:home' %}" class="back-button">
+        <i class="fas fa-arrow-left"></i> 
+        <span>Back to Home</span>
       </a>
     </header>
 
-    <!-- Listings Grid -->
-    <main class="form-container" style="margin-top: 2rem;">
-      <div class="my-listings">
-        {% if my_listings %}
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="header-icon">
+        <i class="fas fa-list-alt"></i>
+      </div>
+      <h1 class="page-title">My Listings</h1>
+      <p class="page-subtitle">Manage your shared study spaces</p>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-container">
+      
+      {% if my_listings %}
+        <!-- Stats Summary -->
+        <div class="stats-bar">
+          <div class="stat-item">
+            <i class="fas fa-map-marker-alt"></i>
+            <span class="stat-number">{{ my_listings|length }}</span>
+            <span class="stat-label">Total Listings</span>
+          </div>
+        </div>
+
+        <!-- Listings Grid -->
+        <div class="listings-grid">
           {% for spot in my_listings %}
-            <div class="card">
-              {% if spot.image_url %}
-                <img src="{{ spot.image_url }}" alt="{{ spot.name }}">
-              {% else %}
-                <img src="{% static 'imgs/placeholder.png' %}" alt="Placeholder">
-              {% endif %}
-              <div class="card-content">
-                <h3>{{ spot.name }}</h3>
-                <p class="card-location"><i class="fas fa-location-dot"></i> {{ spot.location }}</p>
-                <p>{{ spot.description|truncatewords:10 }}</p>
-                <div style="margin-top:1rem;text-align:center;">
-                  <a href="{% url 'core:edit_listing' spot.id %}" class="btn-primary">Edit</a>
-                  <form method="post" action="{% url 'core:delete_listing' spot.id %}" style="display:inline;">
-                    {% csrf_token %}
-                    <button type="submit" class="btn-secondary" onclick="return confirm('Delete this listing?')">Delete</button>
-                  </form>
+            <article class="listing-card">
+              <div class="card-image">
+                {% with images=spot.images %}
+                  {% if images and images|length > 1 %}
+                    <!-- Carousel when more than 1 image -->
+                    <div class="listing-image-carousel">
+                      {% for img in images %}
+                        <img src="{{ img }}" 
+                             alt="{{ spot.name }}" 
+                             class="listing-carousel-image{% if forloop.first %} active{% endif %}">
+                      {% endfor %}
+                      <button class="listing-carousel-btn prev" type="button">
+                        <i class="fas fa-chevron-left"></i>
+                      </button>
+                      <button class="listing-carousel-btn next" type="button">
+                        <i class="fas fa-chevron-right"></i>
+                      </button>
+                    </div>
+                  {% elif images and images.0 %}
+                    <!-- Single image -->
+                    <img src="{{ images.0 }}" alt="{{ spot.name }}">
+                  {% else %}
+                    <!-- Placeholder -->
+                    <img src="{% static 'imgs/placeholder.png' %}" 
+                         alt="No image" 
+                         class="listing-placeholder-img">
+                  {% endif %}
+                {% endwith %}
+
+                <div class="image-overlay">
+                  <div class="overlay-actions">
+                    <a href="{% url 'core:edit_listing' spot.id %}" class="overlay-btn edit-btn" title="Edit">
+                      <i class="fas fa-pen"></i>
+                    </a>
+                    <button type="button" class="overlay-btn delete-btn" title="Delete" 
+                            data-listing-id="{{ spot.id }}" 
+                            data-listing-name="{{ spot.name|escapejs }}">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
+
+              <div class="card-content">
+                <h3 class="card-title">{{ spot.name }}</h3>
+                
+                <div class="card-location">
+                  <i class="fas fa-map-marker-alt"></i>
+                  <span>{{ spot.location }}</span>
+                </div>
+
+                <p class="card-description">{{ spot.description|truncatewords:15 }}</p>
+
+                <!-- Amenities Preview -->
+                <div class="amenities-preview">
+                  {% if spot.wifi %}
+                    <span class="amenity-badge" title="Free Wi-Fi">
+                      <i class="fas fa-wifi"></i>
+                    </span>
+                  {% endif %}
+                  {% if spot.outlets %}
+                    <span class="amenity-badge" title="Power Outlets">
+                      <i class="fas fa-plug"></i>
+                    </span>
+                  {% endif %}
+                  {% if spot.ac %}
+                    <span class="amenity-badge" title="Air-conditioned">
+                      <i class="fas fa-snowflake"></i>
+                    </span>
+                  {% endif %}
+                  {% if spot.coffee %}
+                    <span class="amenity-badge" title="Café">
+                      <i class="fas fa-coffee"></i>
+                    </span>
+                  {% endif %}
+                </div>
+
+                <div class="card-actions">
+                  <a href="{% url 'core:edit_listing' spot.id %}" class="btn-edit">
+                    <i class="fas fa-pen"></i>
+                    <span>Edit</span>
+                  </a>
+                  <button type="button" class="btn-delete" 
+                          data-listing-id="{{ spot.id }}" 
+                          data-listing-name="{{ spot.name|escapejs }}">
+                    <i class="fas fa-trash"></i>
+                    <span>Delete</span>
+                  </button>
+                </div>
+              </div>
+            </article>
           {% endfor %}
-        {% else %}
-          <p style="text-align:center; color:#b1ffad;">You haven’t created any listings yet.</p>
-        {% endif %}
-      </div>
+        </div>
+
+      {% else %}
+        <!-- Empty State -->
+        <div class="empty-state">
+          <div class="empty-icon">
+            <i class="fas fa-folder-open"></i>
+          </div>
+          <h2 class="empty-title">No Listings Yet</h2>
+          <p class="empty-text">You haven't created any study space listings yet. Start sharing your favorite spots!</p>
+          <a href="{% url 'core:create_listing' %}" class="btn-create">
+            <i class="fas fa-plus-circle"></i>
+            <span>Create Your First Listing</span>
+          </a>
+        </div>
+      {% endif %}
+
     </main>
   </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="deleteModal" class="modal">
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-icon warning">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h3 class="modal-title">Delete Listing?</h3>
+      </div>
+      
+      <div class="modal-body">
+        <p>Are you sure you want to delete <strong id="listingNameDisplay"></strong>?</p>
+        <p class="modal-warning">This action cannot be undone.</p>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" id="cancelDelete">
+          <i class="fas fa-times"></i>
+          <span>Cancel</span>
+        </button>
+        <form method="post" id="deleteForm" style="display: inline;">
+          {% csrf_token %}
+          <button type="submit" class="btn-confirm-delete">
+            <i class="fas fa-trash"></i>
+            <span>Delete</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- JS -->
+  <script src="{% static 'js/my_listings.js' %}"></script>
+
 </body>
 </html>
