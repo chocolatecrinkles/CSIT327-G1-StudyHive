@@ -62,4 +62,6 @@ urlpatterns = [
 
     # API
     path('api/check-username/', views.check_username_uniqueness, name='check_username_uniqueness'),
+
+    path('about/', views.about_view, name='about'),
 ]

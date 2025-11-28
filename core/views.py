@@ -7,6 +7,8 @@ from django.contrib.auth import login, logout, get_user_model
 from django.http import JsonResponse
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
 
 from .models import UserProfile, StaffApplication, Review
 from core.models import StudySpot
@@ -645,8 +647,7 @@ def trending_studyspots(request):
 
 # ---------- AJAX USERNAME UNIQUENESS ----------
 
-from django.views.decorators.http import require_http_methods
-from django.views.decorators.csrf import csrf_exempt
+
 
 
 @csrf_exempt
@@ -686,3 +687,19 @@ def check_username_uniqueness(request):
         return JsonResponse(
             {"error": "Database error during availability check."}, status=500
         )
+
+@login_required(login_url="core:login")
+def about_view(request):
+    """
+    Display the About page with StudyHive information.
+    """
+    profile = UserProfile.objects.get(user=request.user)
+    
+    context = {
+        'profile': profile,
+        'total_spots': StudySpot.objects.count(),
+        'total_users': User.objects.count(),
+        'total_reviews': Review.objects.count(),
+    }
+    
+    return render(request, 'about.html', context)

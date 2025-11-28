@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<link rel="stylesheet" href="{% static 'css/about.css' %}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+<nav class="navbar">
+  <div class="nav-container">
+    <div class="nav-brand">
+      <span class="brand-study">Study</span><span class="brand-hive">Hive</span>
+    </div>
+
+    <ul class="nav-menu">
+      <li><a href="{% url 'core:home' %}" class="nav-link">Explore</a></li>
+      <li><a href="{% url 'core:map_view' %}" class="nav-link">Map</a></li>
+      {% if user.userprofile.is_contributor %}
+        <li><a href="{% url 'core:my_listings' %}" class="nav-link">My Spots</a></li>
+      {% else %}
+        <li><a href="{% url 'core:about' %}" class="nav-link active">About</a></li>
+      {% endif %}
+    </ul>
+
+    <div class="nav-right">
+      <div class="user-dropdown">
+        <button class="user-avatar" id="dropdownBtn">
+          {% if user.userprofile.avatar_url %}
+            <img src="{{ user.userprofile.avatar_url }}" alt="Profile">
+          {% else %}
+            <img src="{% static 'imgs/avatar_placeholder.jpg' %}" alt="Profile">
+          {% endif %}
+        </button>
+
+        <div class="dropdown-menu" id="userDropdown">
+          <div class="dropdown-user">
+            <img src="{% if user.userprofile.avatar_url %}{{ user.userprofile.avatar_url }}{% else %}{% static 'imgs/avatar_placeholder.jpg' %}{% endif %}" alt="">
+            <div>
+              <strong>{{ user.first_name }} {{ user.last_name }}</strong><br>
+              <small>{{ user.email }}</small>
+            </div>
+          </div>
+          <div class="dropdown-divider"></div>
+
+          {% if user.userprofile.is_contributor %}
+            <a href="{% url 'core:profile' %}">👤 My Profile</a>
+            <a href="{% url 'core:my_listings' %}">📍 My Listings</a>
+            <a href="{% url 'core:create_listing' %}">➕ Create Listing</a>
+            <a href="#">⚙️ Settings</a>
+          {% else %}
+            <a href="{% url 'core:profile' %}">👤 My Profile</a>
+            <a href="#">🏆 Achievements</a>
+            <a href="{% url 'core:apply_staff' %}">💼 Become a Contributor</a>
+            <a href="#">⚙️ Settings</a>
+          {% endif %}
+
+          <div class="dropdown-divider"></div>
+          <a href="{% url 'core:logout' %}" class="logout-link" id="logoutLink">🚪 Logout</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<section class="hero-section">
+  <div class="hero-content">
+    <h1>🐝 Welcome to StudyHive</h1>
+    <p>Your community-powered platform for discovering the perfect study spots</p>
+  </div>
+</section>
+
+<div class="content-section">
+  <div class="container">
+    <div class="mission-box">
+      <h2>Our Mission</h2>
+      <p>At StudyHive, we believe that the right environment can transform your productivity and learning experience. We're building a community where students and professionals can discover, share, and review the best study spots in their area—from cozy cafes to quiet libraries, from bustling coworking spaces to hidden gems only locals know about.</p>
+    </div>
+
+    <div class="stats-section">
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-number">2,500+</div>
+          <div class="stat-label">Study Spots</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">15,000+</div>
+          <div class="stat-label">Active Users</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">50,000+</div>
+          <div class="stat-label">Reviews</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">25</div>
+          <div class="stat-label">Cities</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-map-marked-alt"></i>
+        </div>
+        <h3>Interactive Maps</h3>
+        <p>Explore study spots near you with our intuitive map interface. Filter by amenities, hours, and more to find your perfect spot.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-users"></i>
+        </div>
+        <h3>Community Reviews</h3>
+        <p>Real reviews from real students. Share your experiences and help others find their ideal study environment.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-star"></i>
+        </div>
+        <h3>Smart Recommendations</h3>
+        <p>Get personalized suggestions based on your preferences, study habits, and location.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-clock"></i>
+        </div>
+        <h3>Real-Time Updates</h3>
+        <p>Check opening hours, crowd levels, and availability before you go. Never waste time on a closed spot again.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-wifi"></i>
+        </div>
+        <h3>Amenity Filtering</h3>
+        <p>Need Wi-Fi? Looking for outlets? Want coffee nearby? Filter spots by the amenities that matter to you.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-heart"></i>
+        </div>
+        <h3>Save Favorites</h3>
+        <p>Bookmark your favorite spots and build your personal collection of go-to study locations.</p>
+      </div>
+    </div>
+
+    <section class="team-section">
+      <h2>Meet the Team</h2>
+      <div class="team-grid">
+        <div class="team-card">
+          <div class="team-avatar">
+            <i class="fas fa-user"></i>
+          </div>
+          <h4>Sarah Chen</h4>
+          <div class="team-role">Founder & CEO</div>
+          <p>Former student who turned her frustration with finding study spots into a platform used by thousands.</p>
+        </div>
+
+        <div class="team-card">
+          <div class="team-avatar">
+            <i class="fas fa-user"></i>
+          </div>
+          <h4>Marcus Rodriguez</h4>
+          <div class="team-role">Head of Product</div>
+          <p>Passionate about creating intuitive experiences that make students' lives easier.</p>
+        </div>
+
+        <div class="team-card">
+          <div class="team-avatar">
+            <i class="fas fa-user"></i>
+          </div>
+          <h4>Emily Watson</h4>
+          <div class="team-role">Community Manager</div>
+          <p>Building and nurturing the StudyHive community one review at a time.</p>
+        </div>
+
+        <div class="team-card">
+          <div class="team-avatar">
+            <i class="fas fa-user"></i>
+          </div>
+          <h4>David Kim</h4>
+          <div class="team-role">Lead Developer</div>
+          <p>Crafting the technology that powers your perfect study spot search.</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="cta-section">
+      <h2>Ready to Find Your Perfect Study Spot?</h2>
+      <p>Join thousands of students who've discovered their ideal study environment</p>
+      <a href="{% url 'core:home' %}" class="cta-button">
+        <i class="fas fa-rocket"></i> Get Started
+      </a>
+    </div>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="footer-content">
+    <div class="nav-brand">
+      <span class="brand-study">Study</span><span class="brand-hive">Hive</span>
+    </div>
+    <div class="social-links">
+      <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+      <a href="#" class="social-link"><i class="fab fa-facebook"></i></a>
+      <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
+      <a href="#" class="social-link"><i class="fab fa-linkedin"></i></a>
+    </div>
+    <p class="footer-text">© 2024 StudyHive. Making studying better, one spot at a time. 🐝</p>
+  </div>
+</footer>
+
+<div id="logoutModal" class="modal-overlay">
+  <div class="modal-box">
+    <h2>Log Out</h2>
+    <p>Are you sure you want to log out of StudyHive?</p>
+    <div class="modal-actions">
+      <button id="cancelLogout">Cancel</button>
+      <button id="confirmLogout">Log Out</button>
+    </div>
+  </div>
+</div>
+
+<script src="{% static 'js/about.js' %}"></script>
+
+{% endblock %}
