@@ -10,6 +10,11 @@ from django.db.models import Q
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 
+
+#checkins import
+from django.db import transaction
+from .models import StudySpot, CheckIn
+
 from .models import UserProfile, StaffApplication, Review
 from core.models import StudySpot
 from .forms import (
@@ -225,6 +230,13 @@ def home(request):
     return render(request, "home.html", context)
 
 
+
+
+
+
+
+
+
 @login_required(login_url="core:login")
 def map_view(request):
     profile = UserProfile.objects.get(user=request.user)
@@ -232,8 +244,11 @@ def map_view(request):
     query = request.GET.get("q", "")
     filter_by = request.GET.get("filter", "all")
 
-    # faster + cleaner
-    study_spots = StudySpot.objects.all()
+    # Use select_related and prefetch_related for optimization
+    study_spots = StudySpot.objects.select_related('owner').prefetch_related(
+        'active_users__user__userprofile'
+    ).all()
+
 
     # Search
     if query:
@@ -703,3 +718,45 @@ def about_view(request):
     }
     
     return render(request, 'about.html', context)
+
+
+
+
+#transaction and checkinss
+@login_required(login_url='core:login')
+@transaction.atomic
+def check_in_out_toggle(request, spot_id):
+    """
+    Toggles the user's check-in status at a specific StudySpot.
+    Ensures a user can only be active in one place at a time.
+    """
+    if request.method == 'POST':
+        spot = get_object_or_404(StudySpot, id=spot_id)
+        user = request.user
+        
+        # Get the user's active check-in (if any)
+        active_checkin = CheckIn.objects.filter(user=user, is_active=True).first()
+        
+        # Scenario A: User is already checked into THIS spot (Action: CHECK OUT)
+        if active_checkin and active_checkin.spot == spot:
+            active_checkin.is_active = False
+            active_checkin.save()
+            messages.info(request, f"You have successfully checked out of {spot.name}.")
+            
+        # Scenario B: User is checked into a DIFFERENT spot (Action: SWITCH)
+        elif active_checkin and active_checkin.spot != spot:
+            # Check out of old spot
+            active_checkin.is_active = False
+            active_checkin.save()
+            messages.warning(request, f"You checked out of {active_checkin.spot.name}.")
+            
+            # Check into new spot (create NEW record)
+            CheckIn.objects.create(user=user, spot=spot, is_active=True)
+            messages.success(request, f"You are now checked in at {spot.name}! Good luck studying.")
+
+        # Scenario C: User is NOT checked in anywhere (Action: CHECK IN)
+        else:
+            CheckIn.objects.create(user=user, spot=spot, is_active=True)
+            messages.success(request, f"You are now checked in at {spot.name}! Good luck studying.")
+
+    return redirect('core:studyspot_detail', spot_id=spot_id)

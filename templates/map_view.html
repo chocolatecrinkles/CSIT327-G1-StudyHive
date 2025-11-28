@@ -113,7 +113,18 @@
            data-pastries="{{ spot.pastries }}"
            data-trending="{{ spot.is_trending }}"
            data-lat="{{ spot.lat }}"
-           data-lng="{{ spot.lng }}">
+           data-lng="{{ spot.lng }}"
+           data-active-users='[
+            {% for checkin in spot.active_users.all %}
+            {% if checkin.is_active %}
+            {
+                "username": "{{ checkin.user.username|escapejs }}",
+                "avatar_url": "{% if checkin.user.userprofile.avatar_url %}{{ checkin.user.userprofile.avatar_url }}{% else %}{% static 'imgs/avatar_placeholder.jpg' %}{% endif %}",
+                "check_in_time": "{{ checkin.check_in_time|date:'c' }}"
+            }{% if not forloop.last %},{% endif %}
+            {% endif %}
+            {% endfor %}
+            ]'>
 
           <div class="spot-card">
             <div class="spot-image">
@@ -152,6 +163,8 @@
               {% endif %}
             </div>
 
+
+            
             <div class="spot-content">
               <h3>{{ spot.name }}</h3>
               <div class="spot-location">
@@ -159,6 +172,8 @@
                 <span>{{ spot.location }}</span>
               </div>
               <div class="tags">
+
+
                 {% if spot.wifi %}<span><i class="fas fa-wifi"></i> Wi-Fi</span>{% endif %}
                 {% if spot.outlets %}<span><i class="fas fa-plug"></i> Outlets</span>{% endif %}
                 {% if spot.ac %}<span><i class="fas fa-snowflake"></i> AC</span>{% endif %}

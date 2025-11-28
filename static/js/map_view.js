@@ -258,6 +258,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const amenityTags = Object.entries(amenityFlags)
       .filter(([, enabled]) => enabled)
       .map(([key]) => key);
+      // Parse active users data
+      let activeUsers = [];
+      try {
+        const activeUsersData = card.dataset.activeUsers;
+        activeUsers = activeUsersData ? JSON.parse(activeUsersData) : [];
+      } catch (e) {
+        console.error('Failed to parse active users:', e);
+        activeUsers = [];
+      }
+
+
+
 
     spotDataMap.set(spotId, {
       id: spotId,
@@ -271,6 +283,7 @@ document.addEventListener("DOMContentLoaded", () => {
       detailUrl,
       amenities: amenityFlags,
       tags: amenityTags,
+      activeUsers: activeUsers,
       card: card,
       marker: null,
     });
@@ -336,6 +349,82 @@ function createDetailSidebar(spotId) {
     `
     : ""; // 24/7: nothing shown
 
+
+
+
+
+
+
+
+// =========================
+// Helper function to format time ago
+// =========================
+function formatTimeAgo(date) {
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+  
+  if (diffMins < 1) return 'just now';
+  if (diffMins < 60) return `${diffMins} min${diffMins !== 1 ? 's' : ''} ago`;
+  if (diffHours < 24) return `${diffHours} hr${diffHours !== 1 ? 's' : ''} ago`;
+  return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+}
+
+// =========================
+// Function to display checked-in users
+// =========================
+function displayCheckedInUsers(spot) {
+  const checkedInSection = document.getElementById('detailCheckedIn');
+  const checkedInCount = document.querySelector('.checkin-count-detail');
+  const usersGrid = document.getElementById('detailUsersGrid');
+  
+  if (!checkedInSection || !usersGrid) return;
+  
+  const activeUsers = spot.activeUsers || [];
+  const count = activeUsers.length;
+  
+  if (count > 0) {
+    checkedInSection.style.display = 'block';
+    checkedInCount.textContent = count;
+    
+    usersGrid.innerHTML = '';
+    
+    activeUsers.forEach(user => {
+      const timeAgo = formatTimeAgo(new Date(user.check_in_time));
+      
+      const userCard = document.createElement('div');
+      userCard.className = 'detail-user-card';
+      userCard.innerHTML = `
+        <img src="${user.avatar_url}" 
+             alt="${user.username}" 
+             class="detail-user-avatar"
+             onerror="this.src='/static/imgs/avatar_placeholder.jpg'">
+        <div class="detail-user-info">
+          <span class="detail-user-name">${user.username}</span>
+          <small class="detail-user-time">
+            <i class="fas fa-clock"></i> ${timeAgo}
+          </small>
+        </div>
+      `;
+      usersGrid.appendChild(userCard);
+    });
+  } else {
+    checkedInSection.style.display = 'none';
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
   const detailView = document.createElement("div");
   detailView.className = "spot-detail-view";
   detailView.innerHTML = `
@@ -382,6 +471,12 @@ function createDetailSidebar(spotId) {
         </div>
       </div>
       
+      <div class="detail-checked-in" id="detailCheckedIn" style="display: none;">
+        <h3><i class="fas fa-users"></i> Currently Studying Here (<span class="checkin-count-detail">0</span>)</h3>
+        <div class="detail-users-grid" id="detailUsersGrid"></div>
+      </div>
+
+      
       <div class="detail-actions">
         <button class="btn-primary detail-view-full" onclick="window.location.href='${spot.detailUrl}'">
           View Full Details
@@ -412,6 +507,9 @@ function createDetailSidebar(spotId) {
 
     const starsContainer = detailView.querySelector(".detail-rating-stars");
     renderRatingStars(starsContainer, spot.rating);
+    
+    displayCheckedInUsers(spot);
+
 
     const backBtn = document.getElementById("backToListBtn");
     backBtn.addEventListener("click", () => {
