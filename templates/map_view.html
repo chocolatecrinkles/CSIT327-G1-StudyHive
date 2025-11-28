@@ -13,14 +13,15 @@
       <span class="brand-study">Study</span><span class="brand-hive">Hive</span>
     </div>
 
-    <ul class="nav-menu">
-      <li><a href="{% url 'core:home' %}" class="nav-link">Explore</a></li>
-      <li><a href="{% url 'core:map_view' %}" class="nav-link active">Map</a></li>
-      {% if user.is_staff %}
-        <li><a href="{% url 'core:my_listings' %}" class="nav-link">My Spots</a></li>
-      {% else %}
-        <li><a href="#" class="nav-link">About</a></li>
-      {% endif %}
+        <ul class="nav-menu">
+          <li><a href="{% url 'core:home' %}" class="nav-link">Explore</a></li>
+          <li><a href="{% url 'core:map_view' %}" class="nav-link active">Map</a></li>
+          {% if user.userprofile.is_contributor %}
+            <li><a href="{% url 'core:my_listings' %}" class="nav-link">My Spots</a></li>
+          {% else %}
+            <li><a href="{% url 'core:apply_staff' %}" class="nav-link">Become Contributor</a></li>
+          {% endif %}
+           <li><a href="#" class="nav-link">About</a></li>
     </ul>
 
     <div class="nav-right">
@@ -50,7 +51,6 @@
             <a href="#">⚙️ Settings</a>
           {% else %}
             <a href="{% url 'core:profile' %}">👤 My Profile</a>
-            <a href="#">🏆 Achievements</a>
             <a href="{% url 'core:apply_staff' %}">💼 Become a Contributor</a>
             <a href="#">⚙️ Settings</a>
           {% endif %}
