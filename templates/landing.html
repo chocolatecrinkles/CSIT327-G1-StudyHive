@@ -28,6 +28,10 @@
           <a href="{% url 'core:login' %}" class="sign-in-btn">
             <i class="fas fa-user"></i> Sign In
           </a>
+
+          <a href="{% url 'core:register' %}" class="sign-in-btn">
+            <i class="fas fa-user"></i> Sign Up
+          </a>
           <button class="burger-btn">
             <span></span>
             <span></span>
@@ -52,17 +56,6 @@
         </h1>
         <p class="hero-text">Find the perfect environment to learn, work, and grow. From cozy cafés to modern coworking spaces near CIT-U.</p>
         
-        <form method="get" action="{% url 'core:landing' %}" class="hero-search">
-          <i class="fas fa-search"></i>
-          <input
-            type="text"
-            name="q"
-            id="mainSearch"
-            value="{{ query }}"
-            placeholder="Search cafés, libraries, coworking spaces..."
-          >
-          <button type="submit" class="search-btn">Search</button>
-        </form>
 
         <div class="hero-stats">
           <div class="stat-item">
@@ -202,6 +195,18 @@
         <p>{{ study_spaces.count }} amazing spaces available in Cebu</p>
       </div>
 
+             <form method="get" action="{% url 'core:landing' %}" class="hero-search">
+          <i class="fas fa-search"></i>
+          <input
+            type="text"
+            name="q"
+            id="mainSearch"
+            value="{{ query }}"
+            placeholder="Search cafés, libraries, coworking spaces..."
+          >
+          <button type="submit" class="search-btn">Search</button>
+        </form>
+
       <div class="cards-grid" id="cardsGrid">
         {% for spot in study_spaces %}
         <div class="spot-card" id="spot-{{ spot.id }}">
@@ -267,6 +272,10 @@
         <div class="cta-buttons">
           <a href="{% url 'core:login' %}" class="btn-primary">
             <i class="fas fa-user"></i> Sign In
+          </a>
+
+          <a href="{% url 'core:register' %}" class="btn-primary">
+            <i class="fas fa-user"></i> Sign Up
           </a>
         </div>
       </div>
