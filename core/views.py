@@ -100,7 +100,6 @@ def upload_studyspot_image(image_file, spot_id):
 # ---------- AUTH / ACCOUNT VIEWS ----------
 
 def landing_view(request):
-    # If user is already logged in → send them to home
     if request.user.is_authenticated:
         return redirect("core:home")
     query = request.GET.get("q", "").strip()
@@ -161,7 +160,7 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     messages.info(request, "You have been logged out.")
-    return redirect("core:login")
+    return redirect("core:landing")
 
 
 def register_view(request):
