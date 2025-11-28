@@ -60,26 +60,26 @@
         <div class="listings-grid">
           {% for spot in my_listings %}
             <article class="listing-card">
+              <!-- IMAGE / CAROUSEL -->
               <div class="card-image">
                 {% with images=spot.images %}
                   {% if images and images|length > 1 %}
-                    <!-- Carousel when more than 1 image -->
+                    <!-- Carousel if more than 1 image -->
                     <div class="listing-image-carousel">
                       {% for img in images %}
-                        <img src="{{ img }}" 
-                             alt="{{ spot.name }}" 
-                             class="listing-carousel-image{% if forloop.first %} active{% endif %}">
+                        <img
+                          src="{{ img }}"
+                          alt="{{ spot.name }}"
+                          class="listing-carousel-image{% if forloop.first %} active{% endif %}"
+                        >
                       {% endfor %}
-                      <button class="listing-carousel-btn prev" type="button">
-                        <i class="fas fa-chevron-left"></i>
-                      </button>
-                      <button class="listing-carousel-btn next" type="button">
-                        <i class="fas fa-chevron-right"></i>
-                      </button>
                     </div>
                   {% elif images and images.0 %}
-                    <!-- Single image -->
+                    <!-- Single image from images[] -->
                     <img src="{{ images.0 }}" alt="{{ spot.name }}">
+                  {% elif spot.image_url %}
+                    <!-- Fallback to legacy single image_url -->
+                    <img src="{{ spot.image_url }}" alt="{{ spot.name }}">
                   {% else %}
                     <!-- Placeholder -->
                     <img src="{% static 'imgs/placeholder.png' %}" 
@@ -87,21 +87,9 @@
                          class="listing-placeholder-img">
                   {% endif %}
                 {% endwith %}
-
-                <div class="image-overlay">
-                  <div class="overlay-actions">
-                    <a href="{% url 'core:edit_listing' spot.id %}" class="overlay-btn edit-btn" title="Edit">
-                      <i class="fas fa-pen"></i>
-                    </a>
-                    <button type="button" class="overlay-btn delete-btn" title="Delete" 
-                            data-listing-id="{{ spot.id }}" 
-                            data-listing-name="{{ spot.name|escapejs }}">
-                      <i class="fas fa-trash"></i>
-                    </button>
-                  </div>
-                </div>
               </div>
 
+              <!-- CARD CONTENT -->
               <div class="card-content">
                 <h3 class="card-title">{{ spot.name }}</h3>
                 
@@ -136,6 +124,7 @@
                   {% endif %}
                 </div>
 
+                <!-- ACTION BUTTONS -->
                 <div class="card-actions">
                   <a href="{% url 'core:edit_listing' spot.id %}" class="btn-edit">
                     <i class="fas fa-pen"></i>
@@ -154,7 +143,7 @@
         </div>
 
       {% else %}
-        <!-- Empty State -->
+        <!-- EMPTY STATE -->
         <div class="empty-state">
           <div class="empty-icon">
             <i class="fas fa-folder-open"></i>
