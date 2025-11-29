@@ -448,87 +448,343 @@ h1 {
   border: 0;
 }
 
+/* =========================================
+   IMPROVED CHECK-IN / CHECK-OUT UI
+========================================= */
 
-/* === Check-In Button Styles === */
 .checkin-section {
-    padding: 1.5rem 0;
-    margin: 1.5rem 0;
-    border-top: 1px solid rgba(177, 255, 173, 0.2);
-    border-bottom: 1px solid rgba(177, 255, 173, 0.2);
-    text-align: center;
+  background: rgba(255, 255, 255, 0.03); /* Subtle glass effect */
+  border: 1px solid rgba(177, 255, 173, 0.15);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin: 2rem 0;
+  text-align: center;
+  backdrop-filter: blur(5px);
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.1);
 }
 
 .checkin-form {
-    margin-bottom: 1rem;
+  margin-bottom: 1rem;
 }
 
+/* --- Base Button Style --- */
+.checkin-section .btn {
+  width: 100%;
+  padding: 1.1rem 1.5rem;
+  border: none;
+  border-radius: 14px;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  font-size: 1.05rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.checkin-section .btn i {
+  font-size: 1.25rem;
+}
+
+/* --- 1. Check In Button (Green/Primary) --- */
+.check-in-btn {
+  background: linear-gradient(135deg, #66bb6a, #43a047);
+  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.check-in-btn:hover {
+  background: linear-gradient(135deg, #81c784, #4caf50);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(76, 175, 80, 0.35);
+}
+
+/* Pulse animation for the "Check In" button to attract attention */
+.check-in-btn:not(.toggle-btn) {
+  animation: btnPulse 3s infinite;
+}
+
+@keyframes btnPulse {
+  0% { box-shadow: 0 0 0 0 rgba(102, 187, 106, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(102, 187, 106, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(102, 187, 106, 0); }
+}
+
+/* --- 2. Check Out Button (Red/Exit) --- */
+.check-out-btn {
+  background: linear-gradient(135deg, #ef5350, #c62828);
+  box-shadow: 0 6px 20px rgba(244, 67, 54, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.check-out-btn:hover {
+  background: linear-gradient(135deg, #e57373, #d32f2f);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(244, 67, 54, 0.35);
+}
+
+/* --- 3. Switch Spot Button (Orange) --- */
+.toggle-btn {
+  background: linear-gradient(135deg, #ffa726, #f57c00);
+  box-shadow: 0 6px 20px rgba(255, 152, 0, 0.25);
+}
+
+.toggle-btn:hover {
+  background: linear-gradient(135deg, #ffb74d, #fb8c00);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(255, 152, 0, 0.35);
+}
+
+/* --- Helper Text --- */
 .checkin-login-prompt {
-    color: #a9e8a5;
-    font-size: 0.95rem;
+  color: #a9e8a5;
+  font-size: 0.95rem;
+  background: rgba(0,0,0,0.2);
+  padding: 1rem;
+  border-radius: 10px;
 }
 .checkin-login-prompt a {
-    color: #b1ffad;
-    font-weight: 700;
-    text-decoration: underline;
+  color: #b1ffad;
+  font-weight: 700;
+  text-decoration: underline;
 }
 
-.btn {
-    width: 100%;
-    padding: 1rem;
-    border: none;
-    border-radius: 12px;
-    font-weight: 800;
-    font-size: 1.05rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    letter-spacing: 0.5px;
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-}
-
-/* CHECK IN (Green/Primary) */
-.check-in-btn {
-    background: linear-gradient(135deg, #66bb6a, #43a047);
-    color: #fff;
-}
-.check-in-btn:hover {
-    background: #43a047;
-    transform: translateY(-3px);
-    box-shadow: 0 14px 25px rgba(67, 160, 71, 0.4);
-}
-
-/* CHECK OUT (Red/Warning) */
-.check-out-btn {
-    background: linear-gradient(135deg, #e57373, #c62828);
-    color: #fff;
-}
-.check-out-btn:hover {
-    background: #c62828;
-    transform: translateY(-3px);
-    box-shadow: 0 14px 25px rgba(198, 40, 40, 0.4);
-}
-
-/* Warning Text for Switching Spots */
 .checkin-status-warning {
-    font-size: 0.85rem;
-    color: #ff9800;
-    margin-top: 0.5rem;
-    font-style: italic;
-    font-family: 'Nunito Sans', sans-serif;
+  font-size: 0.9rem;
+  color: #ffcc80; /* Softer orange */
+  margin-top: 0.75rem;
+  font-weight: 600;
+  background: rgba(255, 152, 0, 0.1);
+  display: inline-block;
+  padding: 0.4rem 1rem;
+  border-radius: 50px;
 }
 
-/* User Count Display */
+/* --- User Count Display --- */
 .checkin-count {
-    margin-top: 1rem;
-    font-size: 1.1rem;
-    color: #b1ffad;
-    font-family: 'Nunito Sans', sans-serif;
+  margin-top: 1.25rem;
+  font-size: 1.1rem;
+  color: #b1ffad;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
+
 .count-value {
-    font-weight: 800;
-    font-size: 1.3rem;
-    color: #ffd95a;
+  font-weight: 800;
+  font-size: 1.4rem;
+  color: #ffffff;
+  background: #66bb6a;
+  padding: 0.2rem 0.8rem;
+  border-radius: 8px;
+  line-height: 1;
+}
+
+/* === CURRENTLY STUDYING LIST (WHO IS HERE) === */
+.checked-in-users {
+  margin-top: 2.5rem;
+  background: rgba(102, 126, 234, 0.05);
+  border: 1px solid rgba(102, 126, 234, 0.15);
+  border-radius: 16px;
+  padding: 1.5rem;
+  backdrop-filter: blur(5px);
+}
+
+.checked-in-users h4 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #b1ffad;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.checked-in-users ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 5px; /* space for scrollbar */
+}
+
+/* Scrollbar for the user list */
+.checked-in-users ul::-webkit-scrollbar {
+  width: 6px;
+}
+.checked-in-users ul::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.1);
+  border-radius: 10px;
+}
+.checked-in-users ul::-webkit-scrollbar-thumb {
+  background: rgba(177, 255, 173, 0.3);
+  border-radius: 10px;
+}
+
+.checked-in-users li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  transition: background 0.2s ease;
+}
+
+.checked-in-users li:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.user-avatar-small {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #b1ffad;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.username {
+  font-weight: 700;
+  color: #fff;
+  font-size: 0.95rem;
+  flex: 1; /* Pushes time to the right */
+}
+
+.checkin-time {
+  font-size: 0.8rem;
+  color: #a9e8a5;
+  opacity: 0.8;
+}
+
+
+
+/* === Top Back Button === */
+.top-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: #b1ffad;
+  background: rgba(41, 74, 65, 0.95);
+  padding: 0.75rem 1.5rem;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border: 1px solid rgba(177, 255, 173, 0.3);
+  transition: all 0.2s ease;
+  backdrop-filter: blur(5px);
+  margin-bottom: 1.5rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.top-back-btn:hover {
+  background: rgba(59, 92, 82, 0.95);
+  transform: translateX(-3px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+  border-color: rgba(177, 255, 173, 0.5);
+}
+
+.top-back-btn:active {
+  transform: translateX(-2px);
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .top-back-btn {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+  }
+}
+
+
+/* === CHECKED-IN USERS GRID (Card Layout) === */
+.checked-in-users .users-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin-top: 1rem;
+}
+
+.checked-in-users .user-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  border: 1px solid rgba(177, 255, 173, 0.15);
+  transition: all 0.2s ease;
+}
+
+.checked-in-users .user-card:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.checked-in-users .user-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #66bb6a;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.checked-in-users .user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.checked-in-users .user-info .username {
+  font-weight: 700;
+  color: #fff;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.checked-in-users .user-info .checkin-time {
+  font-size: 0.8rem;
+  color: #a9e8a5;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.checked-in-users .user-info .checkin-time i {
+  font-size: 0.75rem;
+}
+
+/* Responsive: stack vertically on mobile */
+@media (max-width: 768px) {
+  .checked-in-users .users-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .checked-in-users .user-avatar {
+    width: 40px;
+    height: 40px;
+  }
 }
