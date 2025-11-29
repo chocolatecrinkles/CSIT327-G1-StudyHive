@@ -20,11 +20,11 @@
 <body>
   <!-- Header bar (matches My Listings layout) -->
   <header class="header-bar">
-    <a href="{% url 'core:home' %}" class="logo">
+    <a href="{% url 'core:map_view' %}" class="logo">
       <i class="fas fa-book-reader logo-icon"></i>
       <span class="brand-study">Study</span><span class="brand-hive">Hive</span>
     </a>
-    <a href="{% url 'core:home' %}" class="back-button">
+    <a href="{% url 'core:map_view' %}" class="back-button">
       <i class="fas fa-arrow-left"></i>
       <span>Back to Home</span>
     </a>
@@ -96,7 +96,7 @@
           <i class="fas fa-star"></i>
           <h3>No Reviews Yet</h3>
           <p>You haven't written any reviews. Start by visiting a study spot and sharing your experience!</p>
-          <a href="{% url 'core:home' %}"><i class="fas fa-arrow-right"></i> Find Study Spots</a>
+          <a href="{% url 'core:map_view' %}"><i class="fas fa-arrow-right"></i> Find Study Spots</a>
         </div>
       {% endif %}
     </div>

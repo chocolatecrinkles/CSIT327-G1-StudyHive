@@ -190,44 +190,9 @@ def register_view(request):
 
 @login_required(login_url="core:login")
 def home(request):
-    profile = UserProfile.objects.get(user=request.user)
-
-    query = request.GET.get("q", "").strip()
-    filter_by = request.GET.get("filter", "all")
-
-    study_spaces = StudySpot.objects.all()
-
-    # Search
-    if query:
-        study_spaces = study_spaces.filter(
-            Q(name__icontains=query)
-            | Q(location__icontains=query)
-            | Q(description__icontains=query)
-        )
-
-    # Filters
-    if filter_by == "wifi":
-        study_spaces = study_spaces.filter(wifi=True)
-    elif filter_by == "ac":
-        study_spaces = study_spaces.filter(ac=True)
-    elif filter_by == "outlets":
-        study_spaces = study_spaces.filter(outlets=True)
-    elif filter_by == "coffee":
-        study_spaces = study_spaces.filter(coffee=True)
-    elif filter_by == "pastries":
-        study_spaces = study_spaces.filter(pastries=True)
-    elif filter_by == "open24":
-        study_spaces = study_spaces.filter(open_24_7=True)
-    elif filter_by == "trending":
-        study_spaces = study_spaces.filter(is_trending=True)
-
-    context = {
-        "study_spaces": study_spaces,
-        "query": query,
-        "filter_by": filter_by,
-        "profile": profile,
-    }
-    return render(request, "home.html", context)
+    # The Explore/Home page has been consolidated into the Map view.
+    # Redirect to the map view so the site root/home url shows the interactive map.
+    return redirect('core:map_view')
 
 
 
