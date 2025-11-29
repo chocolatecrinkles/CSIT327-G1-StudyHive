@@ -48,12 +48,12 @@
             <a href="{% url 'core:my_listings' %}">📍 My Listings</a>
             <a href="{% url 'core:my_reviews' %}">⭐ My Reviews</a>
             <a href="{% url 'core:create_listing' %}">➕ Create Listing</a>
-            <a href="#">⚙️ Settings</a>
+            <a href="{% url 'core:settings' %}">⚙️ Settings</a>
           {% else %}
             <a href="{% url 'core:profile' %}">👤 My Profile</a>
             <a href="{% url 'core:my_reviews' %}">⭐ My Reviews</a>
             <a href="{% url 'core:apply_staff' %}">💼 Become a Contributor</a>
-            <a href="#">⚙️ Settings</a>
+            <a href="{% url 'core:settings' %}">⚙️ Settings</a>
           {% endif %}
 
           <div class="dropdown-divider"></div>

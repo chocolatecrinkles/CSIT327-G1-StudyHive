@@ -1,0 +1,351 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings | StudyHive</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="{% static 'css/settings.css' %}">
+</head>
+
+<body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="nav-brand">
+        <a href="{% url 'core:landing' %}">
+          <span class="brand-study">Study</span><span class="brand-hive">Hive</span>
+        </a>
+      </div>
+
+      <div class="nav-right">
+        <a href="{% url 'core:map_view' %}" class="nav-link">
+          <i class="fas fa-home"></i> Dashboard
+        </a>
+        <div class="user-menu">
+          <button class="user-btn">
+            <img src="{% if profile.profile_picture %}{{ profile.profile_picture.url }}{% else %}{% static 'imgs/avatar_placeholder.jpg' %}{% endif %}" alt="Profile">
+            <span>{{ user.first_name|default:user.username }}</span>
+            <i class="fas fa-chevron-down"></i>
+          </button>
+          <div class="user-dropdown">
+            <a href="{% url 'core:settings' %}"><i class="fas fa-gear"></i> Settings</a>
+            <a href="{% url 'core:logout' %}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Settings Container -->
+  <div class="settings-container">
+    <!-- Sidebar -->
+    <aside class="settings-sidebar">
+      <div class="sidebar-header">
+        <h2>Settings</h2>
+        <p>Manage your account and preferences</p>
+      </div>
+
+      <div class="settings-nav">
+        <button class="nav-item active" data-section="account">
+          <i class="fas fa-lock"></i>
+          <span>Account Security</span>
+        </button>
+        <button class="nav-item" data-section="preferences">
+          <i class="fas fa-sliders"></i>
+          <span>Preferences</span>
+        </button>
+        <button class="nav-item" data-section="notifications">
+          <i class="fas fa-bell"></i>
+          <span>Notifications</span>
+        </button>
+        <button class="nav-item" data-section="privacy">
+          <i class="fas fa-shield-halved"></i>
+          <span>Privacy</span>
+        </button>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="user-stats">
+          <div class="stat">
+            <i class="fas fa-star"></i>
+            <div>
+              <strong>{{ user_reviews }}</strong>
+              <span>Reviews</span>
+            </div>
+          </div>
+          <div class="stat">
+            <i class="fas fa-heart"></i>
+            <div>
+              <strong>{{ favorite_spaces }}</strong>
+              <span>Favorites</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="settings-content">
+      <!-- Messages -->
+      {% if messages %}
+        <div class="messages-container">
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+              <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-circle{% else %}info-circle{% endif %}"></i>
+              <span>{{ message }}</span>
+              <button class="close-alert">&times;</button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <!-- Account Security Section -->
+      <section class="settings-section active" id="account-section">
+        <div class="section-header">
+          <h2>Account Security</h2>
+          <p>Manage your password and account security settings</p>
+        </div>
+
+        <form method="POST" action="{% url 'core:change_password' %}" class="settings-form">
+          {% csrf_token %}
+          
+          <div class="form-group">
+            <label for="oldPassword">Current Password</label>
+            <input type="password" id="oldPassword" name="old_password" placeholder="Enter your current password" required>
+          </div>
+
+          <div class="form-group">
+            <label for="newPassword">New Password</label>
+            <input type="password" id="newPassword" name="new_password1" placeholder="Enter new password" required>
+            <p class="help-text">Must be at least 8 characters long</p>
+          </div>
+
+          <div class="form-group">
+            <label for="confirmPassword">Confirm New Password</label>
+            <input type="password" id="confirmPassword" name="new_password2" placeholder="Confirm new password" required>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">
+              <i class="fas fa-key"></i> Update Password
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Preferences Section -->
+      <section class="settings-section" id="preferences-section">
+        <div class="section-header">
+          <h2>Preferences</h2>
+          <p>Customize your StudyHive experience</p>
+        </div>
+
+        <form method="POST" action="{% url 'core:update_preferences' %}" class="settings-form">
+          {% csrf_token %}
+          
+          <div class="preference-group">
+            <h3>Display Preferences</h3>
+            
+            <div class="preference-item">
+              <div class="preference-info">
+                <label>Theme</label>
+                <p>Choose your preferred color theme</p>
+              </div>
+              <select name="theme" class="preference-select">
+                <option value="light">Light Mode</option>
+                <option value="dark">Dark Mode</option>
+                <option value="auto">Auto (System)</option>
+              </select>
+            </div>
+
+            <div class="preference-item">
+              <div class="preference-info">
+                <label>Default View</label>
+                <p>How you want to see study spaces</p>
+              </div>
+              <select name="default_view" class="preference-select">
+                <option value="grid">Grid View</option>
+                <option value="list">List View</option>
+                <option value="map">Map View</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="preference-group">
+            <h3>Location Settings</h3>
+            
+            <div class="preference-item">
+              <div class="preference-info">
+                <label>Default Search Radius</label>
+                <p>How far to search for study spaces</p>
+              </div>
+              <select name="search_radius" class="preference-select">
+                <option value="1">1 km</option>
+                <option value="3" selected>3 km</option>
+                <option value="5">5 km</option>
+                <option value="10">10 km</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">
+              <i class="fas fa-save"></i> Save Preferences
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Notifications Section -->
+      <section class="settings-section" id="notifications-section">
+        <div class="section-header">
+          <h2>Notifications</h2>
+          <p>Choose what notifications you want to receive</p>
+        </div>
+
+        <form method="POST" action="{% url 'core:update_preferences' %}" class="settings-form">
+          {% csrf_token %}
+          
+          <div class="notification-group">
+            <h3>Email Notifications</h3>
+            
+            <div class="notification-item">
+              <div class="notification-info">
+                <label>New Reviews</label>
+                <p>Get notified when someone reviews a space you favorited</p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" name="email_notifications" {% if profile.email_notifications %}checked{% endif %}>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="notification-item">
+              <div class="notification-info">
+                <label>Review Responses</label>
+                <p>When someone responds to your review</p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" name="review_notifications" {% if profile.review_notifications %}checked{% endif %}>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="notification-item">
+              <div class="notification-info">
+                <label>Weekly Digest</label>
+                <p>Summary of new spaces and trending spots</p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" name="marketing_emails" {% if profile.marketing_emails %}checked{% endif %}>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">
+              <i class="fas fa-save"></i> Save Notification Settings
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Privacy Section -->
+      <section class="settings-section" id="privacy-section">
+        <div class="section-header">
+          <h2>Privacy Settings</h2>
+          <p>Control your privacy and who can see your information</p>
+        </div>
+
+        <form method="POST" action="{% url 'core:update_preferences' %}" class="settings-form">
+          {% csrf_token %}
+          
+          <div class="privacy-group">
+            <h3>Profile Visibility</h3>
+            
+            <div class="privacy-item">
+              <div class="privacy-info">
+                <label>Profile Visibility</label>
+                <p>Who can see your profile and reviews</p>
+              </div>
+              <select name="profile_visibility" class="preference-select">
+                <option value="public" {% if profile.profile_visibility == 'public' %}selected{% endif %}>Public</option>
+                <option value="members" {% if profile.profile_visibility == 'members' %}selected{% endif %}>StudyHive Members Only</option>
+                <option value="private" {% if profile.profile_visibility == 'private' %}selected{% endif %}>Private</option>
+              </select>
+            </div>
+
+            <div class="notification-item">
+              <div class="notification-info">
+                <label>Show Activity</label>
+                <p>Display your recent reviews and favorites</p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" name="show_activity" {% if profile.show_activity %}checked{% endif %}>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">
+              <i class="fas fa-save"></i> Save Privacy Settings
+            </button>
+          </div>
+        </form>
+
+        <!-- Danger Zone -->
+        <div class="danger-zone">
+          <h3>Danger Zone</h3>
+          <p>Once you delete your account, there is no going back. Please be certain.</p>
+          
+          <button type="button" class="btn-danger" onclick="showDeleteModal()">
+            <i class="fas fa-trash"></i> Delete Account
+          </button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Delete Account Modal -->
+  <div class="modal" id="deleteModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Delete Account</h3>
+        <button class="close-modal" onclick="hideDeleteModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="warning-box">
+          <i class="fas fa-exclamation-triangle"></i>
+          <p><strong>Warning:</strong> This action cannot be undone. All your data, reviews, and favorites will be permanently deleted.</p>
+        </div>
+        
+        <form method="POST" action="{% url 'core:delete_account' %}">
+          {% csrf_token %}
+          <div class="form-group">
+            <label>Type <strong>DELETE MY ACCOUNT</strong> to confirm</label>
+            <input type="text" name="confirm_delete" placeholder="DELETE MY ACCOUNT" required>
+          </div>
+          
+          <div class="modal-actions">
+            <button type="button" class="btn-secondary" onclick="hideDeleteModal()">Cancel</button>
+            <button type="submit" class="btn-danger">Delete My Account</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="{% static 'js/settings.js' %}"></script>
+</body>
+</html>
