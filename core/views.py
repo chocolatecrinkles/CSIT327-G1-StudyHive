@@ -196,12 +196,6 @@ def home(request):
 
 
 
-
-
-
-
-
-
 @login_required(login_url="core:login")
 def map_view(request):
     profile = UserProfile.objects.get(user=request.user)
@@ -744,3 +738,96 @@ def check_in_out_toggle(request, spot_id):
             messages.success(request, f"You are now checked in at {spot.name}! Good luck studying.")
 
     return redirect('core:studyspot_detail', spot_id=spot_id)
+
+
+@login_required
+def settings_view(request):
+    """
+    Main settings page view
+    Handles profile updates, password changes, and preferences
+    """
+    user = request.user
+    
+    # Get or create user profile
+    profile, created = UserProfile.objects.get_or_create(user=user)
+    
+    # Get user statistics
+    user_reviews = user.review_set.all().count() if hasattr(user, 'review_set') else 0
+    favorite_spaces = user.favorite_spaces.all().count() if hasattr(user, 'favorite_spaces') else 0
+    
+    context = {
+        'user': user,
+        'profile': profile,
+        'user_reviews': user_reviews,
+        'favorite_spaces': favorite_spaces,
+    }
+    
+    return render(request, 'settings.html', context)
+
+
+@login_required
+def change_password(request):
+    """
+    Handle password change
+    """
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+        
+        if form.is_valid():
+            user = form.save()
+            update_session_auth_hash(request, user)
+            messages.success(request, 'Your password was successfully updated!')
+            return redirect('settings.html')
+        else:
+            for error in form.errors.values():
+                messages.error(request, error)
+            return redirect('settings.html')
+    
+    return redirect('settings.html')
+
+
+@login_required
+def update_preferences(request):
+    """
+    Handle user preferences and notification settings
+    """
+    if request.method == 'POST':
+        profile, created = UserProfile.objects.get_or_create(user=request.user)
+        
+        # Update notification preferences
+        profile.email_notifications = request.POST.get('email_notifications') == 'on'
+        profile.review_notifications = request.POST.get('review_notifications') == 'on'
+        profile.marketing_emails = request.POST.get('marketing_emails') == 'on'
+        
+        # Update privacy settings
+        profile.profile_visibility = request.POST.get('profile_visibility', 'public')
+        profile.show_activity = request.POST.get('show_activity') == 'on'
+        
+        profile.save()
+        
+        messages.success(request, 'Preferences updated successfully!')
+        return redirect('settings.html')
+    
+    return redirect('settings.html')
+
+
+@login_required
+def delete_account(request):
+    """
+    Handle account deletion (with confirmation)
+    """
+    if request.method == 'POST':
+        confirmation = request.POST.get('confirm_delete', '')
+        
+        if confirmation.lower() == 'delete my account':
+            user = request.user
+            user.is_active = False
+            user.save()
+            
+            messages.success(request, 'Your account has been deactivated. We\'re sorry to see you go!')
+            return redirect('core:landing')
+        else:
+            messages.error(request, 'Please type "DELETE MY ACCOUNT" to confirm.')
+            return redirect('settings.html')
+    
+    return redirect('settings.html')
