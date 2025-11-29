@@ -63,6 +63,11 @@ class StudySpot(models.Model):
     def active_count(self):
         return self.active_users.filter(is_active=True).count()
 
+    @property
+    def current_checkins(self):
+        """Returns the actual list of active CheckIn objects"""
+        return self.active_users.filter(is_active=True).select_related('user__userprofile')    
+
     def update_average_rating(self):
         average = self.reviews.aggregate(Avg('rating'))['rating__avg']
         self.average_rating = round(average or 0, 2)

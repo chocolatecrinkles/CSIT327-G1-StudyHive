@@ -116,14 +116,12 @@
            data-lat="{{ spot.lat }}"
            data-lng="{{ spot.lng }}"
            data-active-users='[
-            {% for checkin in spot.active_users.all %}
-            {% if checkin.is_active %}
+            {% for checkin in spot.current_checkins %}
             {
                 "username": "{{ checkin.user.username|escapejs }}",
                 "avatar_url": "{% if checkin.user.userprofile.avatar_url %}{{ checkin.user.userprofile.avatar_url }}{% else %}{% static 'imgs/avatar_placeholder.jpg' %}{% endif %}",
                 "check_in_time": "{{ checkin.check_in_time|date:'c' }}"
             }{% if not forloop.last %},{% endif %}
-            {% endif %}
             {% endfor %}
             ]'>
 
