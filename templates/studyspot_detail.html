@@ -11,11 +11,20 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-Avb2QiuDEEvB4bZJYdft2mNjVShBftLdPG8FJ0V7irTLQ8Uo0qcPxh4Plq7G5tGm0rU+1SPhVotteLpBERwTkw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   
   <!-- <link rel="stylesheet" href="{% static 'css/listings_shared.css' %}"> -->
-  <link rel="stylesheet" href="{% static 'css/details.css' %}">
+  <link rel="stylesheet" href="{% static 'css/details.css' %}?v=2">
 </head>
 
 <body>
+
+  
+
+
   <div class="detail-container">
+
+    <a href="{% url 'core:home' %}" class="top-back-btn">
+      <i class="fas fa-arrow-left"></i> Back
+    </a>
+
     {% if spot.image_url %}
     <div class="image-wrapper">
       <img src="{{ spot.image_url }}" alt="{{ spot.name }}">
@@ -215,10 +224,6 @@
       {% empty %}
         <p class="no-reviews-placeholder">Be the first to review this spot!</p>
       {% endfor %}
-    </div>
-
-    <div class="detail-actions">
-      <a href="{% url 'core:map_view' %}" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Map</a>
     </div>
   </div>
 
