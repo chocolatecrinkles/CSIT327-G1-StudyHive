@@ -14,7 +14,6 @@
     </div>
 
         <ul class="nav-menu">
-          <li><a href="{% url 'core:home' %}" class="nav-link">Explore</a></li>
           <li><a href="{% url 'core:map_view' %}" class="nav-link active">Map</a></li>
           {% if user.userprofile.is_contributor %}
             <li><a href="{% url 'core:my_listings' %}" class="nav-link">My Spots</a></li>
