@@ -152,40 +152,40 @@
 
   <!-- Filter Section -->
   <section class="filters-section">
-    <div class="container">
-      <div class="filters-wrapper">
-        <div class="filter-item">
-          <label>Sort by</label>
-          <select id="sortSelect" disabled>
-            <option value="nearest">Nearest to You</option>
-            <option value="rating">Highest Rated</option>
-            <option value="name">Name (A-Z)</option>
-            <option value="popular">Most Popular</option>
-          </select>
-        </div>
-        
-        <div class="filter-tags">
-          <button class="tag active" data-filter="all" disabled>All Spots</button>
-          <button class="tag" data-filter="wifi" disabled><i class="fas fa-wifi"></i> WiFi</button>
-          <button class="tag" data-filter="outlets" disabled><i class="fas fa-plug"></i> Power Outlet</button>
-          <button class="tag" data-filter="coffee" disabled><i class="fas fa-mug-hot"></i> Café / Drinks</button>
-          <button class="tag" data-filter="pastries" disabled><i class="fas fa-bread-slice"></i> Pastries</button>
-          <button class="tag" data-filter="ac" disabled><i class="fas fa-snowflake"></i> AC</button>
-          <button class="tag" data-filter="open24" disabled><i class="fas fa-clock"></i> 24/7</button>
-          <button class="tag" data-filter="trending" disabled><i class="fas fa-fire"></i> Trending</button>
-        </div>
+  <div class="container">
+    <div class="filters-wrapper">
+      <div class="filter-item">
+        <label>Sort by</label>
+        <select id="sortSelect">
+          <option value="nearest">Nearest to You</option>
+          <option value="rating">Highest Rated</option>
+          <option value="name">Name (A-Z)</option>
+          <option value="popular">Most Popular</option>
+        </select>
+      </div>
+      
+      <div class="filter-tags">
+        <button class="tag active" data-filter="all">All Spots</button>
+        <button class="tag" data-filter="wifi"><i class="fas fa-wifi"></i> WiFi</button>
+        <button class="tag" data-filter="outlets"><i class="fas fa-plug"></i> Power Outlet</button>
+        <button class="tag" data-filter="coffee"><i class="fas fa-mug-hot"></i> Café / Drinks</button>
+        <button class="tag" data-filter="pastries"><i class="fas fa-bread-slice"></i> Pastries</button>
+        <button class="tag" data-filter="ac"><i class="fas fa-snowflake"></i> AC</button>
+        <button class="tag" data-filter="open24"><i class="fas fa-clock"></i> 24/7</button>
+        <button class="tag" data-filter="trending"><i class="fas fa-fire"></i> Trending</button>
+      </div>
 
-        <div class="view-options">
-          <button class="view-opt active" data-view="grid" title="Grid View" disabled>
-            <i class="fas fa-grid-2"></i>
-          </button>
-          <button class="view-opt" data-view="list" title="List View" disabled>
-            <i class="fas fa-bars"></i>
-          </button>
-        </div>
+      <div class="view-options">
+        <button class="view-opt active" data-view="grid" title="Grid View">
+          <i class="fas fa-grid-2"></i>
+        </button>
+        <button class="view-opt" data-view="list" title="List View">
+          <i class="fas fa-bars"></i>
+        </button>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
   <!-- Listings -->
   <section class="listings" id="exploreSection">
@@ -209,7 +209,14 @@
 
       <div class="cards-grid" id="cardsGrid">
         {% for spot in study_spaces %}
-        <div class="spot-card" id="spot-{{ spot.id }}">
+        <div class="spot-card" id="spot-{{ spot.id }}"
+             data-wifi="{% if spot.wifi %}true{% else %}false{% endif %}"
+             data-outlets="{% if spot.outlets %}true{% else %}false{% endif %}"
+             data-ac="{% if spot.ac %}true{% else %}false{% endif %}"
+             data-coffee="{% if spot.coffee %}true{% else %}false{% endif %}"
+             data-pastries="{% if spot.pastries %}true{% else %}false{% endif %}"
+             data-open24="{% if spot.open_24_7 %}true{% else %}false{% endif %}"
+             data-trending="{% if spot.is_trending %}true{% else %}false{% endif %}">
           <div class="card-img-wrap" style="position: relative;">
             {% if spot.image_url %}
               <img src="{{ spot.image_url }}" alt="{{ spot.name }}">

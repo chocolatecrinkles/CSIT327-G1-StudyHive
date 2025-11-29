@@ -43,10 +43,20 @@ document.addEventListener("DOMContentLoaded", () => {
   const searchBtn = document.querySelector(".search-btn");
   const exploreSection = document.getElementById("exploreSection");
   const searchInput = document.getElementById("mainSearch");
+  const heroSearchForm = document.querySelector('.hero-search');
+
+  // Prevent form submission
+  if (heroSearchForm) {
+    heroSearchForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+  }
 
   if (searchBtn && exploreSection) {
     searchBtn.addEventListener("click", (e) => {
       e.preventDefault();
+      e.stopPropagation();
 
       // Optional: clear search bar text
       if (searchInput) searchInput.blur();
@@ -76,31 +86,106 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // ======================================
-// FILTER BUTTON BACKEND LINKING
+// FILTER BUTTON MULTI-SELECT LOGIC
 // ======================================
 
 document.addEventListener("DOMContentLoaded", function () {
   const tags = document.querySelectorAll(".filter-tags .tag");
+  let activeFilterSet = new Set(['all']);
 
-  tags.forEach(tag => {
-    tag.addEventListener("click", () => {
-      const filter = tag.getAttribute("data-filter");
-      const baseUrl = window.location.pathname;
+  // Map filter names to data attribute names
+  const filterToDatasetMap = {
+    'wifi': 'wifi',
+    'outlets': 'outlets',
+    'ac': 'ac',
+    'coffee': 'coffee',
+    'pastries': 'pastries',
+    'open24': 'open24',
+    'trending': 'trending'
+  };
 
-      if (filter === "all") {
-        window.location.href = baseUrl;
+  function applyFilters() {
+    spotCards.forEach(card => {
+      let isVisible = true;
+
+      // If "all" is selected, show all cards
+      if (activeFilterSet.has('all')) {
+        isVisible = true;
       } else {
-        window.location.href = `${baseUrl}?filter=${filter}`;
+        // Check if card matches ALL active filters (AND logic)
+        isVisible = Array.from(activeFilterSet).every(filter => {
+          const dataAttr = filterToDatasetMap[filter];
+          if (!dataAttr) return true;
+          const value = card.getAttribute(`data-${dataAttr}`);
+          return value === "true";
+        });
+      }
+
+      if (isVisible) {
+        card.style.display = 'block';
+        setTimeout(() => {
+          card.style.opacity = '1';
+          card.style.transform = 'scale(1)';
+        }, 10);
+      } else {
+        card.style.opacity = '0';
+        card.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+          card.style.display = 'none';
+        }, 300);
       }
     });
-  });
+  }
 
-  // Highlight active tag based on current ?filter param
-  const currentFilter = new URLSearchParams(window.location.search).get("filter") || "all";
-  tags.forEach(btn => {
-    if (btn.dataset.filter === currentFilter) btn.classList.add("active");
-    else btn.classList.remove("active");
-  });
+  // Use event delegation on the container to ensure handlers fire and avoid
+  // multiple listeners. This is more robust and prevents issues where buttons
+  // might behave like submit controls in some contexts.
+  const tagsContainer = document.querySelector('.filter-tags');
+
+  if (tagsContainer) {
+    tagsContainer.addEventListener('click', (e) => {
+      const tag = e.target.closest('.tag');
+      if (!tag) return;
+
+      // Defensive prevents to stop any form submission/navigation
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+
+      const filter = tag.dataset.filter;
+      console.log('[landing] filter click:', filter, 'current active:', Array.from(activeFilterSet));
+
+      if (filter === 'all') {
+        activeFilterSet.clear();
+        activeFilterSet.add('all');
+        tags.forEach(t => t.classList.toggle('active', t.dataset.filter === 'all'));
+      } else {
+        activeFilterSet.delete('all');
+
+        if (activeFilterSet.has(filter)) {
+          activeFilterSet.delete(filter);
+          tag.classList.remove('active');
+        } else {
+          activeFilterSet.add(filter);
+          tag.classList.add('active');
+        }
+
+        if (activeFilterSet.size === 0) {
+          activeFilterSet.add('all');
+          tags.forEach(t => t.classList.toggle('active', t.dataset.filter === 'all'));
+        } else {
+          const allBtn = document.querySelector('[data-filter="all"]');
+          if (allBtn) allBtn.classList.remove('active');
+        }
+      }
+
+      console.log('[landing] active filters after click:', Array.from(activeFilterSet));
+      applyFilters();
+    });
+  }
+
+  // Initialize with all visible
+  applyFilters();
 });
 
 // ======================================
@@ -128,11 +213,9 @@ if (sortSelect && cardsGrid) {
           return ratingB - ratingA;
           
         case 'nearest':
-          // For now, just reverse order as placeholder
           return 0;
           
         case 'popular':
-          // Placeholder for popular sorting
           return 0;
           
         default:
@@ -164,10 +247,7 @@ const viewOptions = document.querySelectorAll('.view-opt');
 
 viewOptions.forEach(option => {
   option.addEventListener('click', () => {
-    // Remove active class from all options
     viewOptions.forEach(opt => opt.classList.remove('active'));
-    
-    // Add active class to clicked option
     option.classList.add('active');
     
     const view = option.dataset.view;
@@ -193,7 +273,6 @@ if (burgerBtn && navMenu) {
     burgerBtn.classList.toggle('active');
   });
   
-  // Close menu when clicking outside
   document.addEventListener('click', (e) => {
     if (!burgerBtn.contains(e.target) && !navMenu.contains(e.target)) {
       navMenu.classList.remove('active');
@@ -237,7 +316,6 @@ const observer = new IntersectionObserver((entries) => {
   });
 }, observerOptions);
 
-// Observe cards for scroll animation
 spotCards.forEach(card => {
   card.style.opacity = '0';
   card.style.transform = 'translateY(30px)';
@@ -245,7 +323,6 @@ spotCards.forEach(card => {
   observer.observe(card);
 });
 
-// Observe feature cards
 const featureCards = document.querySelectorAll('.feature-card');
 featureCards.forEach((card, index) => {
   card.style.opacity = '0';
@@ -300,7 +377,6 @@ function animateCounter(element) {
   }
 }
 
-// Trigger counter animation when stats section is visible
 const statsObserver = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
     if (entry.isIntersecting) {
@@ -322,7 +398,6 @@ if (heroStats) {
 function handleResponsive() {
   const width = window.innerWidth;
   
-  // Adjust grid columns on mobile
   if (width <= 768 && cardsGrid.classList.contains('list-view')) {
     cardsGrid.classList.remove('list-view');
     viewOptions.forEach(opt => {
@@ -335,10 +410,8 @@ function handleResponsive() {
   }
 }
 
-// Run on load
 handleResponsive();
 
-// Run on resize
 let resizeTimer;
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimer);
@@ -352,10 +425,8 @@ window.addEventListener('resize', () => {
 console.log('StudyHive Landing page initialized');
 console.log(`Loaded ${spotCards.length} study spots`);
 
-// Add loading complete class
 document.body.classList.add('loaded');
 
-// Preload images for better UX
 const images = document.querySelectorAll('img[data-src]');
 images.forEach(img => {
   img.src = img.dataset.src;

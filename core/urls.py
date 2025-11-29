@@ -45,6 +45,7 @@ urlpatterns = [
     # Profiles
     path('profile/', views.profile_view, name='profile'),
     path('profile/manage/', views.manage_profile, name='manage_profile'),
+    path('my-reviews/', views.my_reviews, name='my_reviews'),
 
     # Main pages
     path('home/', views.home, name='home'),

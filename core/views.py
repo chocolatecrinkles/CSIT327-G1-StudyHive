@@ -720,6 +720,25 @@ def about_view(request):
     return render(request, 'about.html', context)
 
 
+@login_required(login_url="core:login")
+def my_reviews(request):
+    """
+    Display all reviews made by the current user.
+    """
+    profile = UserProfile.objects.get(user=request.user)
+    
+    # Get all reviews by the current user, ordered by most recent first
+    user_reviews = Review.objects.filter(user=request.user).select_related('spot').order_by('-created_at')
+    
+    context = {
+        'profile': profile,
+        'reviews': user_reviews,
+        'total_reviews': user_reviews.count(),
+    }
+    
+    return render(request, 'my_reviews.html', context)
+
+
 
 
 #transaction and checkinss
