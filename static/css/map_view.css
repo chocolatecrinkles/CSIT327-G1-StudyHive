@@ -380,17 +380,26 @@ body {
   white-space: nowrap;
 }
 
-.filter-chip:hover {
-  border-color: var(--green-main);
-  background: var(--green-light);
-  color: var(--green-dark);
-}
-
 .filter-chip.active {
   background: var(--green-main);
   color: var(--white);
   border-color: var(--green-main);
   box-shadow: 0 4px 12px rgba(102, 187, 106, 0.3);
+}
+
+.filter-chip.active::after {
+  content: '';
+  display: none;
+}
+
+.filter-chip[data-filter="all"].active::after {
+  display: none;
+}
+
+.filter-chip:hover {
+  border-color: var(--green-main);
+  background: var(--green-light);
+  color: var(--green-dark);
 }
 
 .spot-list {
@@ -629,9 +638,29 @@ body {
   flex-wrap: wrap;
 }
 
+.amenity {
+  width: 36px;
+  height: 36px;
+  background: var(--green-main);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--white);
+  font-size: 0.875rem;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.amenity:hover {
+  background: var(--green-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 187, 106, 0.3);
+}
+
 .tag-item {
-  background: var(--green-light);
-  color: var(--green-dark);
+  background: #66bb6a;
+  color: var(--white);
   padding: 0.375rem 0.75rem;
   border-radius: 8px;
   font-size: 0.75rem;
@@ -643,7 +672,7 @@ body {
 }
 
 .tag-item:hover {
-  background: var(--green-accent);
+  background: var(--green-dark);
   color: var(--white);
 }
 

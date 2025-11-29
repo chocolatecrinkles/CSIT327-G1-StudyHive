@@ -873,81 +873,141 @@ function displayCheckedInUsers(spot) {
   // =========================
   // 12. FILTER + SEARCH LOGIC
   // =========================
-  const filterChips = document.querySelectorAll(".filter-chip");
+const filterChips = document.querySelectorAll(".filter-chip");
+let activeFilterSet = new Set(['all']); // Track multiple active filters
 
-  filterChips.forEach((button) => {
-    button.addEventListener("click", () => {
+// Map filter chip data-filter values to actual dataset attribute names
+const filterToDatasetMap = {
+  'wifi': 'wifi',
+  'open24': 'open24',  // matches data-open24 in HTML
+  'outlets': 'outlets',
+  'coffee': 'coffee',
+  'ac': 'ac',
+  'pastries': 'pastries',
+  'trending': 'trending'
+};
+
+filterChips.forEach((button) => {
+  button.addEventListener("click", () => {
+    const filter = button.dataset.filter;
+
+    // Handle "All" filter
+    if (filter === "all") {
+      // Deactivate all other filters
+      activeFilterSet.clear();
+      activeFilterSet.add('all');
       filterChips.forEach((btn) => btn.classList.remove("active"));
       button.classList.add("active");
 
-      const filter = button.dataset.filter;
-
+      // Show all cards
       spotCards.forEach((card) => {
-        if (filter === "all") {
+        card.style.display = "block";
+      });
+    } else {
+      // Remove "All" if selecting specific filter
+      activeFilterSet.delete('all');
+      const allChip = document.querySelector('.filter-chip[data-filter="all"]');
+      if (allChip) allChip.classList.remove("active");
+
+      // Toggle the clicked filter
+      if (activeFilterSet.has(filter)) {
+        activeFilterSet.delete(filter);
+        button.classList.remove("active");
+      } else {
+        activeFilterSet.add(filter);
+        button.classList.add("active");
+      }
+
+      // If no filters selected, revert to "All"
+      if (activeFilterSet.size === 0) {
+        activeFilterSet.add('all');
+        if (allChip) allChip.classList.add("active");
+        
+        spotCards.forEach((card) => {
           card.style.display = "block";
-          return;
-        }
-        const hasAmenity =
-          card.dataset[filter] === "True" ||
-          card.dataset[filter] === "true";
-        card.style.display = hasAmenity ? "block" : "none";
-      });
+        });
+      } else {
+        // Apply multiple filters (card must match ALL selected filters)
+        spotCards.forEach((card) => {
+          let matchesAllFilters = true;
 
-      // when filtering, leave exclusive state as-is
-      if (!exclusiveSpotId) {
-        updateMarkerVisibility();
+          activeFilterSet.forEach((filterKey) => {
+            // Map filter key to actual dataset attribute name
+            const datasetKey = filterToDatasetMap[filterKey] || filterKey;
+            const value = card.dataset[datasetKey];
+            const hasAmenity = value === "true"; // Check for lowercase "true" string
+            
+            if (!hasAmenity) {
+              matchesAllFilters = false;
+            }
+          });
+
+          card.style.display = matchesAllFilters ? "block" : "none";
+        });
       }
-    });
+    }
+
+    // Update markers based on card visibility
+    if (!exclusiveSpotId) {
+      updateMarkerVisibility();
+    }
   });
+});
 
-  if (searchSpot) {
-    searchSpot.addEventListener("input", () => {
-      const query = searchSpot.value.trim().toLowerCase();
-      const activeFilter =
-        document.querySelector(".filter-chip.active")?.dataset.filter ||
-        "all";
+// Update search to also use the mapping
+if (searchSpot) {
+  searchSpot.addEventListener("input", () => {
+    const query = searchSpot.value.trim().toLowerCase();
 
-      spotCards.forEach((card) => {
-        const name =
-          (card.dataset.name ||
-            card.querySelector("h3")?.textContent ||
-            "").toLowerCase();
-        const location =
-          (card.dataset.location ||
-            card.querySelector(".spot-location span")?.textContent ||
-            "").toLowerCase();
+    spotCards.forEach((card) => {
+      const name =
+        (card.dataset.name ||
+          card.querySelector("h3")?.textContent ||
+          "").toLowerCase();
+      const location =
+        (card.dataset.location ||
+          card.querySelector(".spot-location span")?.textContent ||
+          "").toLowerCase();
 
-        const datasetTrueKeys = Object.keys(card.dataset).filter(
-          (key) =>
-            card.dataset[key] === "True" ||
-            card.dataset[key] === "true"
-        );
+      const datasetTrueKeys = Object.keys(card.dataset).filter(
+        (key) =>
+          card.dataset[key] === "True" ||
+          card.dataset[key] === "true"
+      );
 
-        const matchesName = name.includes(query);
-        const matchesLocation = location.includes(query);
-        const matchesAmenity = datasetTrueKeys.some((field) =>
-          field.includes(query.replace(/[^a-z0-9]/g, ""))
-        );
+      const matchesName = name.includes(query);
+      const matchesLocation = location.includes(query);
+      const matchesAmenity = datasetTrueKeys.some((field) =>
+        field.includes(query.replace(/[^a-z0-9]/g, ""))
+      );
 
-        const searchMatch =
-          query === "" || matchesName || matchesLocation || matchesAmenity;
+      const searchMatch =
+        query === "" || matchesName || matchesLocation || matchesAmenity;
 
-        let filterMatch = true;
-        if (activeFilter !== "all") {
-          filterMatch =
-            card.dataset[activeFilter] === "True" ||
-            card.dataset[activeFilter] === "true";
-        }
-
-        card.style.display =
-          searchMatch && filterMatch ? "block" : "none";
-      });
-
-      if (!exclusiveSpotId) {
-        updateMarkerVisibility();
+      // Check if matches ALL active filters
+      let filterMatch = true;
+      if (!activeFilterSet.has('all')) {
+        activeFilterSet.forEach((filterKey) => {
+          // Map filter key to actual dataset attribute name
+          const datasetKey = filterToDatasetMap[filterKey] || filterKey;
+          const value = card.dataset[datasetKey];
+          const hasAmenity = value === "true"; // Check for lowercase "true" string
+          
+          if (!hasAmenity) {
+            filterMatch = false;
+          }
+        });
       }
+
+      card.style.display =
+        searchMatch && filterMatch ? "block" : "none";
     });
-  }
+
+    if (!exclusiveSpotId) {
+      updateMarkerVisibility();
+    }
+  });
+}
 
   if (searchTriggerBtn && searchSpot) {
     searchTriggerBtn.addEventListener("click", () => {
@@ -1013,33 +1073,38 @@ function displayCheckedInUsers(spot) {
   }
 
   if (clearFiltersBtn) {
-    clearFiltersBtn.addEventListener("click", () => {
-      activeFilters = {
-        amenities: [],
-        hours: "any",
-        price: "1",
-        rating: 4.5,
-        distance: 5,
-      };
-      if (distanceSlider && distanceValue) {
-        distanceSlider.value = 5;
-        distanceValue.textContent = "5 km";
-      }
+  clearFiltersBtn.addEventListener("click", () => {
+    activeFilters = {
+      amenities: [],
+      hours: "any",
+      price: "1",
+      rating: 4.5,
+      distance: 5,
+    };
+    
+    if (distanceSlider && distanceValue) {
+      distanceSlider.value = 5;
+      distanceValue.textContent = "5 km";
+    }
 
-      filterChips.forEach((btn) => btn.classList.remove("active"));
-      const allChip = document.querySelector(
-        '.filter-chip[data-filter="all"]'
-      );
-      allChip && allChip.classList.add("active");
+    // Reset filter chips
+    activeFilterSet.clear();
+    activeFilterSet.add('all');
+    filterChips.forEach((btn) => btn.classList.remove("active"));
+    const allChip = document.querySelector(
+      '.filter-chip[data-filter="all"]'
+    );
+    if (allChip) allChip.classList.add("active");
 
-      spotCards.forEach((card) => {
-        card.style.display = "block";
-      });
-      if (!exclusiveSpotId) {
-        updateMarkerVisibility();
-      }
+    spotCards.forEach((card) => {
+      card.style.display = "block";
     });
-  }
+    
+    if (!exclusiveSpotId) {
+      updateMarkerVisibility();
+    }
+  });
+}
 
   // =========================
   // 13. SIDEBAR + DROPDOWNS + LOGOUT
