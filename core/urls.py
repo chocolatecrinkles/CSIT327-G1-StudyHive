@@ -45,6 +45,7 @@ urlpatterns = [
     # Profiles
     path('profile/', views.profile_view, name='profile'),
     path('profile/manage/', views.manage_profile, name='manage_profile'),
+    path('my-reviews/', views.my_reviews, name='my_reviews'),
 
     # Main pages
     path('home/', views.home, name='home'),
@@ -64,4 +65,14 @@ urlpatterns = [
     path('api/check-username/', views.check_username_uniqueness, name='check_username_uniqueness'),
 
     path('about/', views.about_view, name='about'),
+
+    #checkin pathhhsss
+    path('spot/<int:spot_id>/toggle-checkin/', views.check_in_out_toggle, name='check_in_out_toggle'),
+
+    path('settings/', views.settings_view, name='settings'),
+    path('change-password/', views.change_password, name='change_password'),
+    path('update-preferences/', views.update_preferences, name='update_preferences'), 
+    path('delete-account/', views.delete_account, name='delete_account'),
+
+
 ]

@@ -12,7 +12,7 @@
     </div>
 
         <ul class="nav-menu">
-          <li><a href="{% url 'core:home' %}" class="nav-link">Explore</a></li>
+          <!-- Explore removed: Map is the primary home */-->
           <li><a href="{% url 'core:map_view' %}" class="nav-link">Map</a></li>
           {% if user.userprofile.is_contributor %}
             <li><a href="{% url 'core:my_listings' %}" class="nav-link">My Spots</a></li>
@@ -50,7 +50,7 @@
           {% else %}
             <a href="{% url 'core:profile' %}">👤 My Profile</a>
             <a href="{% url 'core:apply_staff' %}">💼 Become a Contributor</a>
-            <a href="#">⚙️ Settings</a>
+            <a href="{% url 'core:settings' %}">⚙️ Settings</a>
           {% endif %}
 
           <div class="dropdown-divider"></div>

@@ -10,6 +10,16 @@ from django.db.models import Q
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 
+
+#checkins import
+from django.db import transaction
+from .models import StudySpot, CheckIn
+
+
+#checkins import
+from django.db import transaction
+from .models import StudySpot, CheckIn
+
 from .models import UserProfile, StaffApplication, Review, CheckIn
 from core.models import StudySpot
 from .forms import (
@@ -185,44 +195,10 @@ def register_view(request):
 
 @login_required(login_url="core:login")
 def home(request):
-    profile = UserProfile.objects.get(user=request.user)
+    # The Explore/Home page has been consolidated into the Map view.
+    # Redirect to the map view so the site root/home url shows the interactive map.
+    return redirect('core:map_view')
 
-    query = request.GET.get("q", "").strip()
-    filter_by = request.GET.get("filter", "all")
-
-    study_spaces = StudySpot.objects.all()
-
-    # Search
-    if query:
-        study_spaces = study_spaces.filter(
-            Q(name__icontains=query)
-            | Q(location__icontains=query)
-            | Q(description__icontains=query)
-        )
-
-    # Filters
-    if filter_by == "wifi":
-        study_spaces = study_spaces.filter(wifi=True)
-    elif filter_by == "ac":
-        study_spaces = study_spaces.filter(ac=True)
-    elif filter_by == "outlets":
-        study_spaces = study_spaces.filter(outlets=True)
-    elif filter_by == "coffee":
-        study_spaces = study_spaces.filter(coffee=True)
-    elif filter_by == "pastries":
-        study_spaces = study_spaces.filter(pastries=True)
-    elif filter_by == "open24":
-        study_spaces = study_spaces.filter(open_24_7=True)
-    elif filter_by == "trending":
-        study_spaces = study_spaces.filter(is_trending=True)
-
-    context = {
-        "study_spaces": study_spaces,
-        "query": query,
-        "filter_by": filter_by,
-        "profile": profile,
-    }
-    return render(request, "home.html", context)
 
 
 @login_required(login_url="core:login")
@@ -232,8 +208,11 @@ def map_view(request):
     query = request.GET.get("q", "")
     filter_by = request.GET.get("filter", "all")
 
-    # faster + cleaner
-    study_spots = StudySpot.objects.all()
+    # Use select_related and prefetch_related for optimization
+    study_spots = StudySpot.objects.select_related('owner').prefetch_related(
+        'active_users__user__userprofile'
+    ).all()
+
 
     # Search
     if query:
@@ -730,3 +709,157 @@ def about_view(request):
     }
     
     return render(request, 'about.html', context)
+
+
+@login_required(login_url="core:login")
+def my_reviews(request):
+    """
+    Display all reviews made by the current user.
+    """
+    profile = UserProfile.objects.get(user=request.user)
+    
+    # Get all reviews by the current user, ordered by most recent first
+    user_reviews = Review.objects.filter(user=request.user).select_related('spot').order_by('-created_at')
+    
+    context = {
+        'profile': profile,
+        'reviews': user_reviews,
+        'total_reviews': user_reviews.count(),
+    }
+    
+    return render(request, 'my_reviews.html', context)
+
+
+
+
+#transaction and checkinss
+@login_required(login_url='core:login')
+@transaction.atomic
+def check_in_out_toggle(request, spot_id):
+    """
+    Toggles the user's check-in status at a specific StudySpot.
+    Ensures a user can only be active in one place at a time.
+    """
+    if request.method == 'POST':
+        spot = get_object_or_404(StudySpot, id=spot_id)
+        user = request.user
+        
+        # Get the user's active check-in (if any)
+        active_checkin = CheckIn.objects.filter(user=user, is_active=True).first()
+        
+        # Scenario A: User is already checked into THIS spot (Action: CHECK OUT)
+        if active_checkin and active_checkin.spot == spot:
+            active_checkin.is_active = False
+            active_checkin.save()
+            messages.info(request, f"You have successfully checked out of {spot.name}.")
+            
+        # Scenario B: User is checked into a DIFFERENT spot (Action: SWITCH)
+        elif active_checkin and active_checkin.spot != spot:
+            # Check out of old spot
+            active_checkin.is_active = False
+            active_checkin.save()
+            messages.warning(request, f"You checked out of {active_checkin.spot.name}.")
+            
+            # Check into new spot (create NEW record)
+            CheckIn.objects.create(user=user, spot=spot, is_active=True)
+            messages.success(request, f"You are now checked in at {spot.name}! Good luck studying.")
+
+        # Scenario C: User is NOT checked in anywhere (Action: CHECK IN)
+        else:
+            CheckIn.objects.create(user=user, spot=spot, is_active=True)
+            messages.success(request, f"You are now checked in at {spot.name}! Good luck studying.")
+
+    return redirect('core:studyspot_detail', spot_id=spot_id)
+
+
+@login_required
+def settings_view(request):
+    """
+    Main settings page view
+    Handles profile updates, password changes, and preferences
+    """
+    user = request.user
+    
+    # Get or create user profile
+    profile, created = UserProfile.objects.get_or_create(user=user)
+    
+    # Get user statistics
+    user_reviews = user.review_set.all().count() if hasattr(user, 'review_set') else 0
+    favorite_spaces = user.favorite_spaces.all().count() if hasattr(user, 'favorite_spaces') else 0
+    
+    context = {
+        'user': user,
+        'profile': profile,
+        'user_reviews': user_reviews,
+        'favorite_spaces': favorite_spaces,
+    }
+    
+    return render(request, 'settings.html', context)
+
+
+@login_required
+def change_password(request):
+    """
+    Handle password change
+    """
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+        
+        if form.is_valid():
+            user = form.save()
+            update_session_auth_hash(request, user)
+            messages.success(request, 'Your password was successfully updated!')
+            return redirect('settings.html')
+        else:
+            for error in form.errors.values():
+                messages.error(request, error)
+            return redirect('settings.html')
+    
+    return redirect('settings.html')
+
+
+@login_required
+def update_preferences(request):
+    """
+    Handle user preferences and notification settings
+    """
+    if request.method == 'POST':
+        profile, created = UserProfile.objects.get_or_create(user=request.user)
+        
+        # Update notification preferences
+        profile.email_notifications = request.POST.get('email_notifications') == 'on'
+        profile.review_notifications = request.POST.get('review_notifications') == 'on'
+        profile.marketing_emails = request.POST.get('marketing_emails') == 'on'
+        
+        # Update privacy settings
+        profile.profile_visibility = request.POST.get('profile_visibility', 'public')
+        profile.show_activity = request.POST.get('show_activity') == 'on'
+        
+        profile.save()
+        
+        messages.success(request, 'Preferences updated successfully!')
+        return redirect('settings.html')
+    
+    return redirect('settings.html')
+
+
+@login_required
+def delete_account(request):
+    """
+    Handle account deletion (with confirmation)
+    """
+    if request.method == 'POST':
+        confirmation = request.POST.get('confirm_delete', '')
+        
+        if confirmation.lower() == 'delete my account':
+            user = request.user
+            user.is_active = False
+            user.save()
+            
+            messages.success(request, 'Your account has been deactivated. We\'re sorry to see you go!')
+            return redirect('core:landing')
+        else:
+            messages.error(request, 'Please type "DELETE MY ACCOUNT" to confirm.')
+            return redirect('settings.html')
+    
+    return redirect('settings.html')

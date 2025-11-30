@@ -10,12 +10,21 @@
   
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-Avb2QiuDEEvB4bZJYdft2mNjVShBftLdPG8FJ0V7irTLQ8Uo0qcPxh4Plq7G5tGm0rU+1SPhVotteLpBERwTkw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   
-  <link rel="stylesheet" href="{% static 'css/listings_shared.css' %}">
-  <link rel="stylesheet" href="{% static 'css/details.css' %}">
+  <!-- <link rel="stylesheet" href="{% static 'css/listings_shared.css' %}"> -->
+  <link rel="stylesheet" href="{% static 'css/details.css' %}?v=2">
 </head>
 
 <body>
+
+  
+
+
   <div class="detail-container">
+
+    <a href="{% url 'core:home' %}" class="top-back-btn">
+      <i class="fas fa-arrow-left"></i> Back
+    </a>
+
     {% if spot.image_url %}
     <div class="image-wrapper">
       <img src="{{ spot.image_url }}" alt="{{ spot.name }}">
@@ -53,6 +62,86 @@
       {% endfor %}
     </div>
     {% endif %}
+
+
+
+
+
+
+<div class="checkin-section">
+    {% if user.is_authenticated %}
+        {% with active_checkin=user.checkins.active_only.first %}
+            <form method="POST" action="{% url 'core:check_in_out_toggle' spot.id %}" class="checkin-form">
+                {% csrf_token %}
+
+                {% if active_checkin %}
+                    {# User is checked in somewhere #}
+                    {% if active_checkin.spot == spot %}
+                        {# Scenario 1: User is checked into *this* spot (Show CHECK OUT) #}
+                        <button type="submit" class="btn check-out-btn" title="Click to check out">
+                            <i class="fas fa-sign-out-alt"></i> Checked In Here (Click to Leave)
+                        </button>
+                    {% else %}
+                        {# Scenario 2: User is checked into a *different* spot (Show TOGGLE) #}
+                        <button type="submit" class="btn check-in-btn toggle-btn" title="Check out of {{ active_checkin.spot.name }} and check in here">
+                            <i class="fas fa-exchange-alt"></i> Switch to {{ spot.name }}
+                        </button>
+                        <p class="checkin-status-warning">Currently checked in at <strong>{{ active_checkin.spot.name }}</strong></p>
+                    {% endif %}
+
+                {% else %}
+                    {# Scenario 3: User is not checked in anywhere (Show CHECK IN) #}
+                    <button type="submit" class="btn check-in-btn" title="Click to check in">
+                        <i class="fas fa-sign-in-alt"></i> Check In Now
+                    </button>
+                {% endif %}
+            </form>
+        {% endwith %}
+    {% else %}
+        <p class="checkin-login-prompt">
+            <a href="{% url 'core:login' %}">Log in</a> to see who is studying here.
+        </p>
+    {% endif %}
+    
+    <div class="checkin-count">
+        <span class="count-value">{{ spot.active_count }}</span> users currently checked in.
+    </div>
+</div>
+
+
+<!-- visible look at who is the checked ins -->
+{% if spot.active_count > 0 %}
+<div class="checked-in-users">
+    <h4><i class="fas fa-users"></i> Currently Studying Here ({{ spot.active_count }})</h4>
+    <div class="users-grid">
+        {% for checkin in spot.active_users.all %}
+            {% if checkin.is_active %}
+            <div class="user-card">
+                <img src="{% if checkin.user.userprofile.avatar_url %}{{ checkin.user.userprofile.avatar_url }}{% else %}{% static 'imgs/avatar_placeholder.jpg' %}{% endif %}" 
+                     alt="{{ checkin.user.username }}" 
+                     class="user-avatar">
+                <div class="user-info">
+                    <span class="username">{{ checkin.user.username }}</span>
+                    <small class="checkin-time">
+                        <i class="fas fa-clock"></i> {{ checkin.check_in_time|timesince }} ago
+                    </small>
+                </div>
+            </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+
+
+
+
+
+
+
+
+
 
     <div class="review-form">
       <div class="panel-heading">
@@ -135,10 +224,6 @@
       {% empty %}
         <p class="no-reviews-placeholder">Be the first to review this spot!</p>
       {% endfor %}
-    </div>
-
-    <div class="detail-actions">
-      <a href="{% url 'core:home' %}" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Explore</a>
     </div>
   </div>
 

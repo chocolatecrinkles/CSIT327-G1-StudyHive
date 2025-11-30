@@ -35,7 +35,7 @@
         <strong>Application Submitted!</strong> Your details have been sent for review.
       </div>
     </div>
-    <a href="{% url 'core:home' %}">← Return to Home</a>
+    <a href="{% url 'core:map_view' %}">← Return to Map</a>
 
   {% elif application %}
     <div class="alert {% if application.status == 'Pending' %}alert-warning{% elif application.status == 'Approved' %}alert-success{% else %}alert-error{% endif %}">
@@ -105,7 +105,7 @@
     </div>
 
     <div style="margin-top: 2rem;">
-      <a href="{% url 'core:home' %}">← Return to Home</a>
+      <a href="{% url 'core:map_view' %}">← Return to Map</a>
     </div>
 
   {% else %}

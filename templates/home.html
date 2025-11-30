@@ -40,7 +40,6 @@
         </div>
 
         <ul class="nav-menu">
-          <li><a href="{% url 'core:home' %}" class="nav-link active">Explore</a></li>
           <li><a href="{% url 'core:map_view' %}" class="nav-link">Map</a></li>
           {% if user.userprofile.is_contributor %}
             <li><a href="{% url 'core:my_listings' %}" class="nav-link">My Spots</a></li>
@@ -73,11 +72,12 @@
               {% if user.userprofile.is_contributor %}
                 <a href="{% url 'core:profile' %}">👤 My Profile</a>
                 <a href="{% url 'core:my_listings' %}">📍 My Listings</a>
+                <a href="{% url 'core:my_reviews' %}">⭐ My Reviews</a>
                 <a href="{% url 'core:create_listing' %}">➕ Create Listing</a>
                 <a href="#">⚙️ Settings</a>
               {% else %}
                 <a href="{% url 'core:profile' %}">👤 My Profile</a>
-                <a href="#">🏆 Achievements</a>
+                <a href="{% url 'core:my_reviews' %}">⭐ My Reviews</a>
                 <a href="{% url 'core:apply_staff' %}">💼 Become a Contributor</a>
                 <a href="#">⚙️ Settings</a>
               {% endif %}
@@ -110,7 +110,7 @@
         </h1>
         <p class="hero-text">Find the perfect environment to learn, work, and grow. From cozy cafés to modern coworking spaces near CIT-U.</p>
         
-        <form method="get" action="{% url 'core:home' %}" class="hero-search">
+        <form method="get" action="{% url 'core:map_view' %}" class="hero-search">
       <i class="fas fa-search"></i>
       <input
         type="text"

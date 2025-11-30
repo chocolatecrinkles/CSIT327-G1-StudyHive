@@ -1,0 +1,105 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StudyHive | My Reviews</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- Page CSS: base + page-specific overrides -->
+  <link rel="stylesheet" href="{% static 'css/my_listings.css' %}">
+  <link rel="stylesheet" href="{% static 'css/my_reviews.css' %}">
+</head>
+
+<body>
+  <!-- Header bar (matches My Listings layout) -->
+  <header class="header-bar">
+    <a href="{% url 'core:map_view' %}" class="logo">
+      <i class="fas fa-book-reader logo-icon"></i>
+      <span class="brand-study">Study</span><span class="brand-hive">Hive</span>
+    </a>
+    <a href="{% url 'core:map_view' %}" class="back-button">
+      <i class="fas fa-arrow-left"></i>
+      <span>Back to Home</span>
+    </a>
+  </header>
+
+  <div class="page-header">
+    <div class="header-icon">
+      <i class="fas fa-star"></i>
+    </div>
+    <h1 class="page-title">My Reviews</h1>
+    <p class="page-subtitle">Manage and review your shared experiences</p>
+  </div>
+
+  <!-- Reviews Section -->
+  <main class="main-container">
+    <div class="reviews-container">
+      <div class="reviews-header">
+        <h1><i class="fas fa-star"></i> My Reviews</h1>
+        <p class="reviews-count">You have written <strong>{{ total_reviews }}</strong> review{{ total_reviews|pluralize }}</p>
+      </div>
+
+      {% if reviews %}
+        <div class="reviews-list">
+          {% for review in reviews %}
+            <div class="review-card">
+              <div class="review-header">
+                <div class="review-spot-info">
+                  <h3><a href="{% url 'core:studyspot_detail' review.spot.id %}">{{ review.spot.name }}</a></h3>
+                  <div class="review-spot-location">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span>{{ review.spot.location }}</span>
+                  </div>
+                </div>
+                <div class="review-rating">
+                  <span class="rating-value">{{ review.rating }}/5</span>
+                  <div class="rating-stars">
+                    {% for i in "12345" %}
+                      {% if i|add:0 <= review.rating %}
+                        <i class="fas fa-star"></i>
+                      {% else %}
+                        <i class="far fa-star"></i>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+
+              {% if review.comment %}
+                <div class="review-comment">
+                  {{ review.comment }}
+                </div>
+              {% endif %}
+
+              <div style="text-align: right; color: #808080; font-size: 0.85rem;">
+                <i class="fas fa-calendar"></i> 
+                {{ review.created_at|date:"M d, Y \a\t H:i" }}
+              </div>
+
+              <div class="review-actions">
+                <a href="{% url 'core:studyspot_detail' review.spot.id %}" class="review-btn review-btn-edit">
+                  <i class="fas fa-arrow-right"></i> View Spot
+                </a>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <i class="fas fa-star"></i>
+          <h3>No Reviews Yet</h3>
+          <p>You haven't written any reviews. Start by visiting a study spot and sharing your experience!</p>
+          <a href="{% url 'core:map_view' %}"><i class="fas fa-arrow-right"></i> Find Study Spots</a>
+        </div>
+      {% endif %}
+    </div>
+  </main>
+
+</html>
