@@ -694,22 +694,6 @@ def check_username_uniqueness(request):
             {"error": "Database error during availability check."}, status=500
         )
 
-@login_required(login_url="core:login")
-def about_view(request):
-    """
-    Display the About page with StudyHive information.
-    """
-    profile = UserProfile.objects.get(user=request.user)
-    
-    context = {
-        'profile': profile,
-        'total_spots': StudySpot.objects.count(),
-        'total_users': User.objects.count(),
-        'total_reviews': Review.objects.count(),
-    }
-    
-    return render(request, 'about.html', context)
-
 
 @login_required(login_url="core:login")
 def my_reviews(request):
@@ -863,3 +847,19 @@ def delete_account(request):
             return redirect('settings.html')
     
     return redirect('settings.html')
+
+
+@login_required(login_url="core:login")
+def about(request):
+    profile = UserProfile.objects.get(user=request.user)
+    study_spot_count = StudySpot.objects.count
+    active_user_count = User.objects.filter(is_active=True).count()
+    city_count = StudySpot.objects.values('location').distinct().count() or 1
+
+    context = {
+        "profile": profile,
+        "study_spot_count": study_spot_count,
+        "active_user_count": active_user_count,
+        "city_count": city_count,
+    }
+    return render(request, "about.html", context)

@@ -75,26 +75,31 @@
       <p>At StudyHive, we believe that the right environment can transform your productivity and learning experience. We're building a community where students and professionals can discover, share, and review the best study spots in their area—from cozy cafes to quiet libraries, from bustling coworking spaces to hidden gems only locals know about.</p>
     </div>
 
-    <div class="stats-section">
-      <div class="stats-grid">
-        <div class="stat-item">
-          <div class="stat-number">2,500+</div>
-          <div class="stat-label">Study Spots</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-number">15,000+</div>
-          <div class="stat-label">Active Users</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-number">50,000+</div>
-          <div class="stat-label">Reviews</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-number">25</div>
-          <div class="stat-label">Cities</div>
+      <div class="stats-section">
+        <div class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-number">
+              {{ study_spot_count|default:"0" }}+
+            </div>
+            <div class="stat-label">Study Spots</div>
+          </div>
+
+          <div class="stat-item">
+            <div class="stat-number">
+              {{ active_user_count|default:"0" }}+
+            </div>
+            <div class="stat-label">Active Users</div>
+          </div>
+
+          <div class="stat-item">
+            <div class="stat-number">
+              {{ city_count|default:"1" }}
+            </div>
+            <div class="stat-label">Cities</div>
+          </div>
         </div>
       </div>
-    </div>
+
 
     <div class="features-grid">
       <div class="feature-card">

@@ -151,25 +151,3 @@ class CheckIn(models.Model):
     
 
 
-# --- 3. CHECKIN MODEL ---
-
-class CheckIn(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='checkins')
-    spot = models.ForeignKey(StudySpot, on_delete=models.CASCADE, related_name='active_users')
-    check_in_time = models.DateTimeField(auto_now_add=True)
-    
-    is_active = models.BooleanField(default=True) 
-    objects = CheckInManager()
-    
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=['user'], 
-                condition=Q(is_active=True), 
-                name='unique_active_checkin'
-            )
-        ]
-
-    def __str__(self):
-        status = "Checked In" if self.is_active else "Checked Out"
-        return f"{self.user.username} @ {self.spot.name} ({status})"

@@ -64,7 +64,8 @@ urlpatterns = [
     # API
     path('api/check-username/', views.check_username_uniqueness, name='check_username_uniqueness'),
 
-    path('about/', views.about_view, name='about'),
+    path("about/", views.about, name="about"),
+
 
     #checkin pathhhsss
     path('spot/<int:spot_id>/toggle-checkin/', views.check_in_out_toggle, name='check_in_out_toggle'),
