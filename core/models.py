@@ -1,7 +1,17 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
-from django.db.models import Avg
+from django.db.models import Avg, Q
+import time
+
+# --- 1. MANAGERS ---
+class CheckInManager(models.Manager):
+    """Custom manager to easily fetch active checkins."""
+    def active_only(self):
+        return self.filter(is_active=True)
+
+# --- 2. CORE MODELS ---
+
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -104,3 +114,25 @@ class Review(models.Model):
     
 
 
+# --- 3. CHECKIN MODEL ---
+
+class CheckIn(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='checkins')
+    spot = models.ForeignKey(StudySpot, on_delete=models.CASCADE, related_name='active_users')
+    check_in_time = models.DateTimeField(auto_now_add=True)
+    
+    is_active = models.BooleanField(default=True) 
+    objects = CheckInManager()
+    
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user'], 
+                condition=Q(is_active=True), 
+                name='unique_active_checkin'
+            )
+        ]
+
+    def __str__(self):
+        status = "Checked In" if self.is_active else "Checked Out"
+        return f"{self.user.username} @ {self.spot.name} ({status})"

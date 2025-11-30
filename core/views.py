@@ -10,7 +10,7 @@ from django.db.models import Q
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 
-from .models import UserProfile, StaffApplication, Review
+from .models import UserProfile, StaffApplication, Review, CheckIn
 from core.models import StudySpot
 from .forms import (
     CustomUserCreationForm,
@@ -493,10 +493,20 @@ def edit_listing(request, spot_id):
         # ---------- LOCATION (LAT / LNG) ----------
         lat = request.POST.get("lat")
         lng = request.POST.get("lng")
-        if lat:
-            spot.lat = lat
-        if lng:
-            spot.lng = lng
+
+        # Check if lat is valid (not None, not "None", not empty)
+        if lat and lat not in ['None', 'null', 'undefined', '']:
+            try:
+                spot.lat = float(lat)
+            except (ValueError, TypeError):
+                pass # If it's not a number, ignore it
+
+        # Check if lng is valid
+        if lng and lng not in ['None', 'null', 'undefined', '']:
+            try:
+                spot.lng = float(lng)
+            except (ValueError, TypeError):
+                pass # If it's not a number, ignore it
 
         # ---------- IMAGES (MULTIPLE, JUST LIKE create_listing) ----------
         # input name="images" with multiple
@@ -524,7 +534,7 @@ def edit_listing(request, spot_id):
     )
 
 
-
+# ---------- Delete Listing ----------
 @contributor_required
 def delete_listing(request, id):
     spot = get_object_or_404(StudySpot, id=id)
@@ -534,11 +544,28 @@ def delete_listing(request, id):
         return redirect("core:my_listings")
 
     if request.method == "POST":
-        spot.delete()
-        messages.success(request, "Listing successfully deleted.")
+        try:
+            # 1. Direct Delete: CheckIns
+            print(f"Attempting to delete CheckIns for {spot.name}...") 
+            CheckIn.objects.filter(spot=spot).delete()
 
+            # 2. Direct Delete: Reviews
+            print(f"Attempting to delete Reviews for {spot.name}...")
+            Review.objects.filter(spot=spot).delete()
+
+            # 3. Delete Spot
+            print(f"Deleting Spot: {spot.name}...")
+            spot.delete()
+            
+            messages.success(request, "Listing successfully deleted.")
+            print("SUCCESS: Listing deleted.")
+
+        except Exception as e:
+            # This prints the error to your terminal so we can see it!
+            print(f"❌ DELETE FAILED: {e}") 
+            messages.error(request, f"Error deleting listing: {e}")
+    
     return redirect("core:my_listings")
-
 
 # ---------- STAFF APPLICATION ----------
 
