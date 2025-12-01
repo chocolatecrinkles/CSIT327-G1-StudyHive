@@ -66,6 +66,23 @@ body {
   color: var(--green-main);
 }
 
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.nav-logo {
+  height: 32px;      
+  width: auto;
+  max-height: 32px;
+  object-fit: contain;
+  flex-shrink: 0;
+  display: block;
+  margin-right: 0.35rem;
+}
+
+
 .nav-menu {
   margin-left: 40rem;
   display: flex;
@@ -2194,4 +2211,8 @@ body {
     width: 36px;
     height: 36px;
   }
+}
+
+.marker-pin.highlighted {
+  transform: scale(1.50);
 }
