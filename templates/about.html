@@ -8,17 +8,18 @@
 <nav class="navbar">
   <div class="nav-container">
     <div class="nav-brand">
+      <img src="{% static 'imgs/Studyhive_Logo.png' %}" alt="StudyHive Logo" class="nav-logo">
       <span class="brand-study">Study</span><span class="brand-hive">Hive</span>
     </div>
 
-        <ul class="nav-menu">
-          <li><a href="{% url 'core:map_view' %}" class="nav-link">Map</a></li>
-          {% if user.userprofile.is_contributor %}
-            <li><a href="{% url 'core:my_listings' %}" class="nav-link">My Spots</a></li>
-          {% else %}
-            <li><a href="{% url 'core:apply_staff' %}" class="nav-link">Become Contributor</a></li>
-          {% endif %}
-           <li><a href="{% url 'core:about' %}" class="nav-link active">About</a></li>
+    <ul class="nav-menu">
+      <li><a href="{% url 'core:map_view' %}" class="nav-link">Map</a></li>
+      {% if user.userprofile.is_contributor %}
+        <li><a href="{% url 'core:my_listings' %}" class="nav-link">My Spots</a></li>
+      {% else %}
+        <li><a href="{% url 'core:apply_staff' %}" class="nav-link">Become Contributor</a></li>
+      {% endif %}
+       <li><a href="{% url 'core:about' %}" class="nav-link active">About</a></li>
     </ul>
 
     <div class="nav-right">
@@ -35,7 +36,7 @@
           <div class="dropdown-user">
             <img src="{% if user.userprofile.avatar_url %}{{ user.userprofile.avatar_url }}{% else %}{% static 'imgs/avatar_placeholder.jpg' %}{% endif %}" alt="">
             <div>
-              <strong>{{ user.first_name }} {{ user.last_name }}</strong>
+              <strong>{{ user.first_name }} {{ user.last_name }}</strong><br>
               <small>{{ user.email }}</small>
             </div>
           </div>
@@ -44,10 +45,12 @@
           {% if user.userprofile.is_contributor %}
             <a href="{% url 'core:profile' %}">👤 My Profile</a>
             <a href="{% url 'core:my_listings' %}">📍 My Listings</a>
+            <a href="{% url 'core:my_reviews' %}">⭐ My Reviews</a>
             <a href="{% url 'core:create_listing' %}">➕ Create Listing</a>
-            <a href="#">⚙️ Settings</a>
+            <a href="{% url 'core:settings' %}">⚙️ Settings</a>
           {% else %}
             <a href="{% url 'core:profile' %}">👤 My Profile</a>
+            <a href="{% url 'core:my_reviews' %}">⭐ My Reviews</a>
             <a href="{% url 'core:apply_staff' %}">💼 Become a Contributor</a>
             <a href="{% url 'core:settings' %}">⚙️ Settings</a>
           {% endif %}
@@ -62,7 +65,7 @@
 
 <section class="hero-section">
   <div class="hero-content">
-    <h1>🐝 Welcome to StudyHive</h1>
+    <h1>Welcome to StudyHive</h1>
     <p>Your community-powered platform for discovering the perfect study spots</p>
   </div>
 </section>
@@ -194,9 +197,6 @@
 
 <footer class="footer">
   <div class="footer-content">
-    <div class="nav-brand">
-      <span class="brand-StudyHive">StudyHive</span>
-    </div>
 
     <div class="social-links">
       <a href="#" class="social-link" aria-label="Visit StudyHive on Twitter">
