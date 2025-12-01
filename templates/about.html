@@ -12,7 +12,6 @@
     </div>
 
         <ul class="nav-menu">
-          <!-- Explore removed: Map is the primary home */-->
           <li><a href="{% url 'core:map_view' %}" class="nav-link">Map</a></li>
           {% if user.userprofile.is_contributor %}
             <li><a href="{% url 'core:my_listings' %}" class="nav-link">My Spots</a></li>
@@ -54,7 +53,7 @@
           {% endif %}
 
           <div class="dropdown-divider"></div>
-          <a href="{% url 'core:landing' %}" class="logout-link" id="logoutLink">🚪 Logout</a>
+          <a href="{% url 'core:logout' %}" class="logout-link" id="logoutLink">🚪 Logout</a>
         </div>
       </div>
     </div>
@@ -79,21 +78,21 @@
         <div class="stats-grid">
           <div class="stat-item">
             <div class="stat-number">
-              {{ study_spot_count|default:"0" }}+
+              {{ study_spot_count|default:"0" }}
             </div>
             <div class="stat-label">Study Spots</div>
           </div>
 
           <div class="stat-item">
             <div class="stat-number">
-              {{ active_user_count|default:"0" }}+
+              {{ active_user_count|default:"0" }}
             </div>
             <div class="stat-label">Active Users</div>
           </div>
 
           <div class="stat-item">
             <div class="stat-number">
-              {{ city_count|default:"1" }}
+              {{ 1 }} 
             </div>
             <div class="stat-label">Cities</div>
           </div>
@@ -156,7 +155,7 @@
       <div class="team-grid">
         <div class="team-card">
           <div class="team-avatar">
-            <i class="fas fa-user"></i>
+            <img src="{% static 'imgs/leanda_pic.png' %}" alt="John Luis Leanda">
           </div>
           <h4>John Luis Leanda</h4>
           <div class="team-role">Lead Developer</div>
@@ -165,7 +164,7 @@
 
         <div class="team-card">
           <div class="team-avatar">
-            <i class="fas fa-user"></i>
+            <img src="{% static 'imgs/axcelson_pic.png' %}" alt="Axcelson Macansantos">
           </div>
           <h4>Axcelson Macansantos</h4>
           <div class="team-role">Frontend Developer</div>
@@ -173,9 +172,9 @@
         </div>
 
         <div class="team-card">
-          <div class="team-avatar">
-            <i class="fas fa-user"></i>
-          </div>
+        <div class="team-avatar">
+          <img src="{% static 'imgs/libato_pic.png' %}" alt="Michael Grant Libato">
+        </div>
           <h4>Michael Grant Libato</h4>
           <div class="team-role">Backend Developer</div>
           <p>Eh.</p>

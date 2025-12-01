@@ -38,7 +38,6 @@ if (cancelLogout && logoutModal) {
 
 if (confirmLogout) {
   confirmLogout.addEventListener('click', () => {
-    // Get the logout URL from the link
     const logoutUrl = logoutLink.getAttribute('href');
     window.location.href = logoutUrl;
   });

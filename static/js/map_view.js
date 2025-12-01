@@ -65,11 +65,17 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentPreviewSpotId = null;
   let currentPreviewDetailUrl = null;
 
+  let highlightedSpotId = null;
+
   let sidebarMode = "list"; // 'list' or 'detail'
   let currentDetailSpotId = null;
 
   // which spot has exclusive marker visible (null = show all)
   let exclusiveSpotId = null;
+
+  let userLatLng = null;
+  let activeRouteLine = null;
+  let activeRoutePopup = null;
 
   let activeFilters = {
     amenities: [],
@@ -100,7 +106,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function getCustomIcon(isOpen, isHighlighted = false) {
-    const sizeMultiplier = isHighlighted ? 1.2 : 1;
+    const sizeMultiplier = isHighlighted ? 2 : 1;
     const baseSize = 32 * sizeMultiplier;
 
     const html = `
@@ -201,13 +207,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function formatTime24To12(timeStr) {
-      if (!timeStr) return "";
-      const [h, m] = timeStr.split(":").map(Number);
-      const suffix = h >= 12 ? "PM" : "AM";
-      const hour12 = ((h + 11) % 12) + 1;
-      return `${hour12}:${m.toString().padStart(2, "0")} ${suffix}`;
-    }
-
+    if (!timeStr) return "";
+    const [h, m] = timeStr.split(":").map(Number);
+    const suffix = h >= 12 ? "PM" : "AM";
+    const hour12 = ((h + 11) % 12) + 1;
+    return `${hour12}:${m.toString().padStart(2, "0")} ${suffix}`;
+  }
 
   // =========================
   // 5. SPOT DATA REGISTRATION
@@ -258,18 +263,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const amenityTags = Object.entries(amenityFlags)
       .filter(([, enabled]) => enabled)
       .map(([key]) => key);
-      // Parse active users data
-      let activeUsers = [];
-      try {
-        const activeUsersData = card.dataset.activeUsers;
-        activeUsers = activeUsersData ? JSON.parse(activeUsersData) : [];
-      } catch (e) {
-        console.error('Failed to parse active users:', e);
-        activeUsers = [];
-      }
 
-
-
+    // Parse active users data
+    let activeUsers = [];
+    try {
+      const activeUsersData = card.dataset.activeUsers;
+      activeUsers = activeUsersData ? JSON.parse(activeUsersData) : [];
+    } catch (e) {
+      console.error("Failed to parse active users:", e);
+      activeUsers = [];
+    }
 
     spotDataMap.set(spotId, {
       id: spotId,
@@ -293,200 +296,175 @@ document.addEventListener("DOMContentLoaded", () => {
   // 6. EXCLUSIVE MARKER LOGIC
   // =========================
   function setExclusiveMarker(spotIdOrNull) {
-    exclusiveSpotId = spotIdOrNull;
-
-    // If the chosen spot's card was hidden by a previous filter/search,
-    // force it visible so UI and markers stay in sync.
-    if (spotIdOrNull) {
-      const spot = spotDataMap.get(spotIdOrNull);
-      if (spot && spot.card) {
-        spot.card.style.display = "block";
-      }
-    }
-
+    // We no longer hide other markers when one is selected.
+    // Keep all markers visible and only use the "highlight" style.
+    exclusiveSpotId = null;
     updateMarkerVisibility();
   }
 
   // =========================
   // 7. SIDEBAR DETAIL VIEW
   // =========================
-function createDetailSidebar(spotId) {
-  const spot = spotDataMap.get(spotId);
-  if (!spot) return;
+  function createDetailSidebar(spotId) {
+    const spot = spotDataMap.get(spotId);
+    if (!spot) return;
 
-  const sidebarHeader = mapSidebar.querySelector(".sidebar-header");
-  const sidebarSearch = mapSidebar.querySelector(".sidebar-search");
-  const chipFilters = mapSidebar.querySelector(".chip-filters");
-  const spotList = mapSidebar.querySelector(".spot-list");
-  const existingDetail = mapSidebar.querySelector(".spot-detail-view");
+    const sidebarHeader = mapSidebar.querySelector(".sidebar-header");
+    const sidebarSearch = mapSidebar.querySelector(".sidebar-search");
+    const chipFilters = mapSidebar.querySelector(".chip-filters");
+    const spotList = mapSidebar.querySelector(".spot-list");
+    const existingDetail = mapSidebar.querySelector(".spot-detail-view");
 
-  if (existingDetail) existingDetail.remove();
+    if (existingDetail) existingDetail.remove();
 
-  sidebarSearch.style.display = "none";
-  chipFilters.style.display = "none";
-  spotList.style.display = "none";
+    sidebarSearch.style.display = "none";
+    chipFilters.style.display = "none";
+    spotList.style.display = "none";
 
-  sidebarHeader.innerHTML = `
-    <button id="backToListBtn" class="icon-btn">
-      <i class="fas fa-arrow-left"></i>
-    </button>
-    <div class="sidebar-title">
-      <h2>Study Spot Details</h2>
-      <p>View information</p>
-    </div>
-  `;
-
-  // 👉 only show hours if NOT 24/7 and both times exist
-  const hasHours =
-    !spot.amenities.open24 && spot.opening && spot.closing;
-
-  const hoursMarkup = hasHours
-    ? `
-      <div class="detail-hours">
-        <i class="fas fa-clock"></i>
-        <span>${formatTime24To12(spot.opening)} – ${formatTime24To12(spot.closing)}</span>
+    sidebarHeader.innerHTML = `
+      <button id="backToListBtn" class="icon-btn">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <div class="sidebar-title">
+        <h2>Study Spot Details</h2>
+        <p>View information</p>
       </div>
-    `
-    : ""; // 24/7: nothing shown
+    `;
 
+    // 👉 only show hours if NOT 24/7 and both times exist
+    const hasHours = !spot.amenities.open24 && spot.opening && spot.closing;
 
-
-
-
-
-
-
-// =========================
-// Helper function to format time ago
-// =========================
-function formatTimeAgo(date) {
-  const now = new Date();
-  const diffMs = now - date;
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-  
-  if (diffMins < 1) return 'just now';
-  if (diffMins < 60) return `${diffMins} min${diffMins !== 1 ? 's' : ''} ago`;
-  if (diffHours < 24) return `${diffHours} hr${diffHours !== 1 ? 's' : ''} ago`;
-  return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
-}
-
-// =========================
-// Function to display checked-in users
-// =========================
-function displayCheckedInUsers(spot) {
-  const checkedInSection = document.getElementById('detailCheckedIn');
-  const checkedInCount = document.querySelector('.checkin-count-detail');
-  const usersGrid = document.getElementById('detailUsersGrid');
-  
-  if (!checkedInSection || !usersGrid) return;
-  
-  const activeUsers = spot.activeUsers || [];
-  const count = activeUsers.length;
-  
-  if (count > 0) {
-    checkedInSection.style.display = 'block';
-    checkedInCount.textContent = count;
-    
-    usersGrid.innerHTML = '';
-    
-    activeUsers.forEach(user => {
-      const timeAgo = formatTimeAgo(new Date(user.check_in_time));
-      
-      const userCard = document.createElement('div');
-      userCard.className = 'detail-user-card';
-      userCard.innerHTML = `
-        <img src="${user.avatar_url}" 
-             alt="${user.username}" 
-             class="detail-user-avatar"
-             onerror="this.src='/static/imgs/avatar_placeholder.jpg'">
-        <div class="detail-user-info">
-          <span class="detail-user-name">${user.username}</span>
-          <small class="detail-user-time">
-            <i class="fas fa-clock"></i> ${timeAgo}
-          </small>
+    const hoursMarkup = hasHours
+      ? `
+        <div class="detail-hours">
+          <i class="fas fa-clock"></i>
+          <span>${formatTime24To12(spot.opening)} – ${formatTime24To12(
+          spot.closing
+        )}</span>
         </div>
-      `;
-      usersGrid.appendChild(userCard);
-    });
-  } else {
-    checkedInSection.style.display = 'none';
-  }
-}
+      `
+      : "";
 
+    // Helper function to format time ago
+    function formatTimeAgo(date) {
+      if (!(date instanceof Date) || isNaN(date.getTime())) return "";
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
 
+      if (diffMins < 1) return "just now";
+      if (diffMins < 60)
+        return `${diffMins} min${diffMins !== 1 ? "s" : ""} ago`;
+      if (diffHours < 24)
+        return `${diffHours} hr${diffHours !== 1 ? "s" : ""} ago`;
+      return `${diffDays} day${diffDays !== 1 ? "s" : ""} ago`;
+    }
 
+    // Function to display checked-in users
+    function displayCheckedInUsers(spot) {
+      const checkedInSection = document.getElementById("detailCheckedIn");
+      const checkedInCount = document.querySelector(".checkin-count-detail");
+      const usersGrid = document.getElementById("detailUsersGrid");
 
+      if (!checkedInSection || !usersGrid) return;
 
+      const activeUsers = spot.activeUsers || [];
+      const count = activeUsers.length;
 
+      if (count > 0) {
+        checkedInSection.style.display = "block";
+        checkedInCount.textContent = count;
 
+        usersGrid.innerHTML = "";
 
+        activeUsers.forEach((user) => {
+          const dateObj = new Date(user.check_in_time);
+          const timeAgo = formatTimeAgo(dateObj);
 
-
-
-  const detailView = document.createElement("div");
-  detailView.className = "spot-detail-view";
-  detailView.innerHTML = `
-    <div class="detail-image-container">
-      <div class="detail-carousel-slot"></div>
-
-      <span class="detail-status-badge ${spot.status}">
-        ${spot.status === "open" ? "Open" : "Closed"}
-      </span>
-      ${
-        spot.amenities.trending
-          ? '<span class="detail-trending-badge"><i class="fas fa-fire"></i> Trending</span>'
-          : ""
+          const userCard = document.createElement("div");
+          userCard.className = "detail-user-card";
+          userCard.innerHTML = `
+            <img src="${user.avatar_url}"
+                 alt="${user.username}"
+                 class="detail-user-avatar"
+                 onerror="this.src='/static/imgs/avatar_placeholder.jpg'">
+            <div class="detail-user-info">
+              <span class="detail-user-name">${user.username}</span>
+              <small class="detail-user-time">
+                <i class="fas fa-clock"></i> ${timeAgo}
+              </small>
+            </div>
+          `;
+          usersGrid.appendChild(userCard);
+        });
+      } else {
+        checkedInSection.style.display = "none";
       }
-    </div>
-    
-    <div class="detail-content">
-      <h2 class="detail-title">${spot.name}</h2>
-      
-      <div class="detail-rating">
-        <span class="detail-rating-value">${spot.rating.toFixed(1)}</span>
-        <div class="detail-rating-stars"></div>
-      </div>
-      
-      <div class="detail-location">
-        <i class="fas fa-map-marker-alt"></i>
-        <span>${spot.location}</span>
+    }
+
+    const detailView = document.createElement("div");
+    detailView.className = "spot-detail-view";
+    detailView.innerHTML = `
+      <div class="detail-image-container">
+        <div class="detail-carousel-slot"></div>
+
+        <span class="detail-status-badge ${spot.status}">
+          ${spot.status === "open" ? "Open" : "Closed"}
+        </span>
+        ${
+          spot.amenities.trending
+            ? '<span class="detail-trending-badge"><i class="fas fa-fire"></i> Trending</span>'
+            : ""
+        }
       </div>
 
-      ${hoursMarkup}
-      
-      <div class="detail-amenities">
-        <h3>Amenities</h3>
-        <div class="detail-tags">
-          ${spot.tags
-            .map((tagKey) => {
-              const def = amenityDefinitions[tagKey];
-              return def
-                ? `<span><i class="fas ${def.icon}"></i> ${def.label}</span>`
-                : "";
-            })
-            .filter(Boolean)
-            .join("")}
+      <div class="detail-content">
+        <h2 class="detail-title">${spot.name}</h2>
+
+        <div class="detail-rating">
+          <span class="detail-rating-value">${spot.rating.toFixed(1)}</span>
+          <div class="detail-rating-stars"></div>
+        </div>
+
+        <div class="detail-location">
+          <i class="fas fa-map-marker-alt"></i>
+          <span>${spot.location}</span>
+        </div>
+
+        ${hoursMarkup}
+
+        <div class="detail-amenities">
+          <h3>Amenities</h3>
+          <div class="detail-tags">
+            ${spot.tags
+              .map((tagKey) => {
+                const def = amenityDefinitions[tagKey];
+                return def
+                  ? `<span><i class="fas ${def.icon}"></i> ${def.label}</span>`
+                  : "";
+              })
+              .filter(Boolean)
+              .join("")}
+          </div>
+        </div>
+
+        <div class="detail-checked-in" id="detailCheckedIn" style="display: none;">
+          <h3><i class="fas fa-users"></i> Currently Studying Here (<span class="checkin-count-detail">0</span>)</h3>
+          <div class="detail-users-grid" id="detailUsersGrid"></div>
+        </div>
+
+        <div class="detail-actions">
+          <button class="btn-primary detail-view-full" onclick="window.location.href='${spot.detailUrl}'">
+            View Full Details
+          </button>
+          <button class="btn-secondary detail-get-directions">
+            <i class="fas fa-directions"></i> Get Directions
+          </button>
         </div>
       </div>
-      
-      <div class="detail-checked-in" id="detailCheckedIn" style="display: none;">
-        <h3><i class="fas fa-users"></i> Currently Studying Here (<span class="checkin-count-detail">0</span>)</h3>
-        <div class="detail-users-grid" id="detailUsersGrid"></div>
-      </div>
-
-      
-      <div class="detail-actions">
-        <button class="btn-primary detail-view-full" onclick="window.location.href='${spot.detailUrl}'">
-          View Full Details
-        </button>
-        <button class="btn-secondary detail-get-directions">
-          <i class="fas fa-directions"></i> Get Directions
-        </button>
-      </div>
-    </div>
-  `;
+    `;
 
     spotList.parentNode.insertBefore(detailView, spotList.nextSibling);
 
@@ -507,9 +485,8 @@ function displayCheckedInUsers(spot) {
 
     const starsContainer = detailView.querySelector(".detail-rating-stars");
     renderRatingStars(starsContainer, spot.rating);
-    
-    displayCheckedInUsers(spot);
 
+    displayCheckedInUsers(spot);
 
     const backBtn = document.getElementById("backToListBtn");
     backBtn.addEventListener("click", () => {
@@ -518,22 +495,18 @@ function displayCheckedInUsers(spot) {
 
     const directionsBtn = detailView.querySelector(".detail-get-directions");
     directionsBtn.addEventListener("click", () => {
-      if (spot.card) {
-        const lat = parseFloat(spot.card.dataset.lat);
-        const lng = parseFloat(spot.card.dataset.lng);
-        if (!isNaN(lat) && !isNaN(lng)) {
-          window.open(
-            `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,
-            "_blank"
-          );
-        }
-      }
+      if (!spot.card) return;
+
+      const lat = parseFloat(spot.card.dataset.lat);
+      const lng = parseFloat(spot.card.dataset.lng);
+      if (isNaN(lat) || isNaN(lng)) return;
+
+      showDirectionsRoute({ lat, lng }, spot.name);
     });
 
     sidebarMode = "detail";
     currentDetailSpotId = spotId;
   }
-
 
   function returnToListView() {
     const sidebarHeader = mapSidebar.querySelector(".sidebar-header");
@@ -562,7 +535,8 @@ function displayCheckedInUsers(spot) {
     if (detailView) detailView.remove();
 
     clearHighlightedMarker();
-    setExclusiveMarker(null); // show all again based on filters
+    setExclusiveMarker(null);
+    clearRoute(); // ✅ clear route when going back
 
     sidebarMode = "list";
     currentDetailSpotId = null;
@@ -575,27 +549,30 @@ function displayCheckedInUsers(spot) {
     const spot = spotDataMap.get(spotId);
     if (!spot || !spot.marker) return;
 
+    // If this marker is already highlighted, toggle OFF
+    if (highlightedMarker && highlightedSpotId === spotId) {
+      clearHighlightedMarker();
+      highlightedSpotId = null;
+      return;
+    }
+
+    // Highlight a new marker
     clearHighlightedMarker();
 
     const marker = spot.marker;
 
     const isOpen =
-      computeOpenStatus(
-        spot.opening,
-        spot.closing,
-        spot.amenities.open24
-      ) === "open";
+      computeOpenStatus(spot.opening, spot.closing, spot.amenities.open24) ===
+      "open";
 
     marker.setIcon(getCustomIcon(isOpen, true));
     highlightedMarker = marker;
+    highlightedSpotId = spotId;
 
     const el = marker.getElement();
     if (el) {
       el.classList.add("marker-highlighted");
     }
-
-    // Make this the only visible marker
-    setExclusiveMarker(spotId);
 
     if (studyMap) {
       studyMap.flyTo(marker.getLatLng(), 16, { duration: 1 });
@@ -622,6 +599,7 @@ function displayCheckedInUsers(spot) {
       }
 
       highlightedMarker = null;
+      highlightedSpotId = null;
     }
   }
 
@@ -649,6 +627,8 @@ function displayCheckedInUsers(spot) {
     const onLocationFound = (e) => {
       const radius = e.accuracy;
       const heading = e.heading;
+
+      userLatLng = e.latlng;
 
       if (locationMarker) {
         studyMap.removeLayer(locationMarker);
@@ -818,6 +798,7 @@ function displayCheckedInUsers(spot) {
       mapPreviewCard.classList.remove("active");
       currentPreviewSpotId = null;
       currentPreviewDetailUrl = null;
+      clearRoute(); // ✅ clear route when closing preview
     });
   }
 
@@ -835,7 +816,6 @@ function displayCheckedInUsers(spot) {
   function updateMarkerVisibility() {
     if (!studyMap) return;
 
-    // If a specific marker is "exclusive", keep ONLY that marker on the map.
     if (exclusiveSpotId) {
       leafletMarkers.forEach((marker) => {
         const spotId = marker.spotId;
@@ -853,7 +833,6 @@ function displayCheckedInUsers(spot) {
       return;
     }
 
-    // Normal mode: show/hide markers based on card visibility (filters/search)
     leafletMarkers.forEach((marker) => {
       const card = marker.card;
       const isCardVisible = !card || card.style.display !== "none";
@@ -873,141 +852,132 @@ function displayCheckedInUsers(spot) {
   // =========================
   // 12. FILTER + SEARCH LOGIC
   // =========================
-const filterChips = document.querySelectorAll(".filter-chip");
-let activeFilterSet = new Set(['all']); // Track multiple active filters
+  const filterChips = document.querySelectorAll(".filter-chip");
+  let activeFilterSet = new Set(["all"]);
 
-// Map filter chip data-filter values to actual dataset attribute names
-const filterToDatasetMap = {
-  'wifi': 'wifi',
-  'open24': 'open24',  // matches data-open24 in HTML
-  'outlets': 'outlets',
-  'coffee': 'coffee',
-  'ac': 'ac',
-  'pastries': 'pastries',
-  'trending': 'trending'
-};
+  const filterToDatasetMap = {
+    wifi: "wifi",
+    open24: "open24",
+    outlets: "outlets",
+    coffee: "coffee",
+    ac: "ac",
+    pastries: "pastries",
+    trending: "trending",
+  };
 
-filterChips.forEach((button) => {
-  button.addEventListener("click", () => {
-    const filter = button.dataset.filter;
+  filterChips.forEach((button) => {
+    button.addEventListener("click", () => {
+      const filter = button.dataset.filter;
 
-    // Handle "All" filter
-    if (filter === "all") {
-      // Deactivate all other filters
-      activeFilterSet.clear();
-      activeFilterSet.add('all');
-      filterChips.forEach((btn) => btn.classList.remove("active"));
-      button.classList.add("active");
-
-      // Show all cards
-      spotCards.forEach((card) => {
-        card.style.display = "block";
-      });
-    } else {
-      // Remove "All" if selecting specific filter
-      activeFilterSet.delete('all');
-      const allChip = document.querySelector('.filter-chip[data-filter="all"]');
-      if (allChip) allChip.classList.remove("active");
-
-      // Toggle the clicked filter
-      if (activeFilterSet.has(filter)) {
-        activeFilterSet.delete(filter);
-        button.classList.remove("active");
-      } else {
-        activeFilterSet.add(filter);
+      if (filter === "all") {
+        activeFilterSet.clear();
+        activeFilterSet.add("all");
+        filterChips.forEach((btn) => btn.classList.remove("active"));
         button.classList.add("active");
-      }
 
-      // If no filters selected, revert to "All"
-      if (activeFilterSet.size === 0) {
-        activeFilterSet.add('all');
-        if (allChip) allChip.classList.add("active");
-        
         spotCards.forEach((card) => {
           card.style.display = "block";
         });
       } else {
-        // Apply multiple filters (card must match ALL selected filters)
-        spotCards.forEach((card) => {
-          let matchesAllFilters = true;
+        activeFilterSet.delete("all");
+        const allChip = document.querySelector(
+          '.filter-chip[data-filter="all"]'
+        );
+        if (allChip) allChip.classList.remove("active");
 
+        if (activeFilterSet.has(filter)) {
+          activeFilterSet.delete(filter);
+          button.classList.remove("active");
+        } else {
+          activeFilterSet.add(filter);
+          button.classList.add("active");
+        }
+
+        if (activeFilterSet.size === 0) {
+          activeFilterSet.add("all");
+          if (allChip) allChip.classList.add("active");
+
+          spotCards.forEach((card) => {
+            card.style.display = "block";
+          });
+        } else {
+          spotCards.forEach((card) => {
+            let matchesAllFilters = true;
+
+            activeFilterSet.forEach((filterKey) => {
+              const datasetKey = filterToDatasetMap[filterKey] || filterKey;
+              const value = card.dataset[datasetKey];
+              const hasAmenity = value === "true";
+
+              if (!hasAmenity) {
+                matchesAllFilters = false;
+              }
+            });
+
+            card.style.display = matchesAllFilters ? "block" : "none";
+          });
+        }
+      }
+
+      if (!exclusiveSpotId) {
+        updateMarkerVisibility();
+      }
+    });
+  });
+
+  if (searchSpot) {
+    searchSpot.addEventListener("input", () => {
+      const query = searchSpot.value.trim().toLowerCase();
+
+      spotCards.forEach((card) => {
+        const name =
+          (
+            card.dataset.name ||
+            card.querySelector("h3")?.textContent ||
+            ""
+          ).toLowerCase();
+        const location =
+          (
+            card.dataset.location ||
+            card.querySelector(".spot-location span")?.textContent ||
+            ""
+          ).toLowerCase();
+
+        const datasetTrueKeys = Object.keys(card.dataset).filter(
+          (key) =>
+            card.dataset[key] === "True" || card.dataset[key] === "true"
+        );
+
+        const matchesName = name.includes(query);
+        const matchesLocation = location.includes(query);
+        const matchesAmenity = datasetTrueKeys.some((field) =>
+          field.includes(query.replace(/[^a-z0-9]/g, ""))
+        );
+
+        const searchMatch =
+          query === "" || matchesName || matchesLocation || matchesAmenity;
+
+        let filterMatch = true;
+        if (!activeFilterSet.has("all")) {
           activeFilterSet.forEach((filterKey) => {
-            // Map filter key to actual dataset attribute name
             const datasetKey = filterToDatasetMap[filterKey] || filterKey;
             const value = card.dataset[datasetKey];
-            const hasAmenity = value === "true"; // Check for lowercase "true" string
-            
+            const hasAmenity = value === "true";
+
             if (!hasAmenity) {
-              matchesAllFilters = false;
+              filterMatch = false;
             }
           });
+        }
 
-          card.style.display = matchesAllFilters ? "block" : "none";
-        });
+        card.style.display = searchMatch && filterMatch ? "block" : "none";
+      });
+
+      if (!exclusiveSpotId) {
+        updateMarkerVisibility();
       }
-    }
-
-    // Update markers based on card visibility
-    if (!exclusiveSpotId) {
-      updateMarkerVisibility();
-    }
-  });
-});
-
-// Update search to also use the mapping
-if (searchSpot) {
-  searchSpot.addEventListener("input", () => {
-    const query = searchSpot.value.trim().toLowerCase();
-
-    spotCards.forEach((card) => {
-      const name =
-        (card.dataset.name ||
-          card.querySelector("h3")?.textContent ||
-          "").toLowerCase();
-      const location =
-        (card.dataset.location ||
-          card.querySelector(".spot-location span")?.textContent ||
-          "").toLowerCase();
-
-      const datasetTrueKeys = Object.keys(card.dataset).filter(
-        (key) =>
-          card.dataset[key] === "True" ||
-          card.dataset[key] === "true"
-      );
-
-      const matchesName = name.includes(query);
-      const matchesLocation = location.includes(query);
-      const matchesAmenity = datasetTrueKeys.some((field) =>
-        field.includes(query.replace(/[^a-z0-9]/g, ""))
-      );
-
-      const searchMatch =
-        query === "" || matchesName || matchesLocation || matchesAmenity;
-
-      // Check if matches ALL active filters
-      let filterMatch = true;
-      if (!activeFilterSet.has('all')) {
-        activeFilterSet.forEach((filterKey) => {
-          // Map filter key to actual dataset attribute name
-          const datasetKey = filterToDatasetMap[filterKey] || filterKey;
-          const value = card.dataset[datasetKey];
-          const hasAmenity = value === "true"; // Check for lowercase "true" string
-          
-          if (!hasAmenity) {
-            filterMatch = false;
-          }
-        });
-      }
-
-      card.style.display =
-        searchMatch && filterMatch ? "block" : "none";
     });
-
-    if (!exclusiveSpotId) {
-      updateMarkerVisibility();
-    }
-  });
-}
+  }
 
   if (searchTriggerBtn && searchSpot) {
     searchTriggerBtn.addEventListener("click", () => {
@@ -1073,38 +1043,37 @@ if (searchSpot) {
   }
 
   if (clearFiltersBtn) {
-  clearFiltersBtn.addEventListener("click", () => {
-    activeFilters = {
-      amenities: [],
-      hours: "any",
-      price: "1",
-      rating: 4.5,
-      distance: 5,
-    };
-    
-    if (distanceSlider && distanceValue) {
-      distanceSlider.value = 5;
-      distanceValue.textContent = "5 km";
-    }
+    clearFiltersBtn.addEventListener("click", () => {
+      activeFilters = {
+        amenities: [],
+        hours: "any",
+        price: "1",
+        rating: 4.5,
+        distance: 5,
+      };
 
-    // Reset filter chips
-    activeFilterSet.clear();
-    activeFilterSet.add('all');
-    filterChips.forEach((btn) => btn.classList.remove("active"));
-    const allChip = document.querySelector(
-      '.filter-chip[data-filter="all"]'
-    );
-    if (allChip) allChip.classList.add("active");
+      if (distanceSlider && distanceValue) {
+        distanceSlider.value = 5;
+        distanceValue.textContent = "5 km";
+      }
 
-    spotCards.forEach((card) => {
-      card.style.display = "block";
+      activeFilterSet.clear();
+      activeFilterSet.add("all");
+      filterChips.forEach((btn) => btn.classList.remove("active"));
+      const allChip = document.querySelector(
+        '.filter-chip[data-filter="all"]'
+      );
+      if (allChip) allChip.classList.add("active");
+
+      spotCards.forEach((card) => {
+        card.style.display = "block";
+      });
+
+      if (!exclusiveSpotId) {
+        updateMarkerVisibility();
+      }
     });
-    
-    if (!exclusiveSpotId) {
-      updateMarkerVisibility();
-    }
-  });
-}
+  }
 
   // =========================
   // 13. SIDEBAR + DROPDOWNS + LOGOUT
@@ -1272,9 +1241,7 @@ if (searchSpot) {
     const settingsButton = controlsContainer.querySelector(
       ".ctrl-btn-settings"
     );
-    const cancelButton = controlsContainer.querySelector(
-      ".ctrl-btn.cancel"
-    );
+    const cancelButton = controlsContainer.querySelector(".ctrl-btn.cancel");
     const defaultControls = controlsContainer.querySelector(
       ".owner-controls-default"
     );
@@ -1310,6 +1277,7 @@ if (searchSpot) {
       dropdownMenu && dropdownMenu.classList.add("hidden");
       userDropdown && (userDropdown.style.display = "none");
       logoutModal && logoutModal.classList.remove("active");
+      clearRoute(); // optional: Esc also clears route
     }
   });
 
@@ -1379,7 +1347,7 @@ if (searchSpot) {
   // =========================
   function initSpotImageCarousels(root = document) {
     const carousels = root.querySelectorAll(".spot-image-carousel");
-    const TRANSITION_MS = 350; // must match CSS transition (~0.35s)
+    const TRANSITION_MS = 350;
 
     carousels.forEach((carousel) => {
       const images = carousel.querySelectorAll(".carousel-image");
@@ -1402,7 +1370,6 @@ if (searchSpot) {
         ALL_CLASSES.forEach((cls) => img.classList.remove(cls));
       };
 
-      // initial state
       images.forEach((img, idx) => {
         resetClasses(img);
         if (idx === 0) img.classList.add("active");
@@ -1421,7 +1388,7 @@ if (searchSpot) {
         if (direction === "next") {
           currentImg.classList.add("active", "slide-out-left");
           nextImg.classList.add("slide-in-right");
-          void nextImg.offsetWidth; // reflow
+          void nextImg.offsetWidth;
           nextImg.classList.add("active", "slide-from-right");
         } else {
           currentImg.classList.add("active", "slide-out-right");
@@ -1430,7 +1397,6 @@ if (searchSpot) {
           nextImg.classList.add("active", "slide-from-left");
         }
 
-        // use timeout to match CSS transition instead of animationend
         setTimeout(() => {
           resetClasses(currentImg);
           nextImg.classList.add("active");
@@ -1445,8 +1411,9 @@ if (searchSpot) {
       if (prevBtn) {
         prevBtn.addEventListener("click", (e) => {
           e.preventDefault();
-          e.stopPropagation(); // don't trigger card navigation / detail open
-          const newIndex = (currentIndex - 1 + images.length) % images.length;
+          e.stopPropagation();
+          const newIndex =
+            (currentIndex - 1 + images.length) % images.length;
           goTo(newIndex, "prev");
         });
       }
@@ -1462,10 +1429,145 @@ if (searchSpot) {
     });
   }
 
-  // Initialize any carousels already present on the map cards
   initSpotImageCarousels();
 
   console.log(
-    "StudyHive Map View initialized with enhanced detail sidebar, exclusive marker highlight, and animated carousels."
+    "StudyHive Map View initialized with enhanced detail sidebar, exclusive marker highlight, animated carousels, and OSRM routing."
   );
+
+  // =========================
+  // 19. ROUTE HELPERS (OSRM + CLEAR)
+  // =========================
+  function clearRoute() {
+    if (!studyMap) return;
+    if (activeRouteLine) {
+      studyMap.removeLayer(activeRouteLine);
+      activeRouteLine = null;
+    }
+    if (activeRoutePopup) {
+      studyMap.removeLayer(activeRoutePopup);
+      activeRoutePopup = null;
+    }
+  }
+
+  function formatMinutes(mins) {
+    if (mins < 1) return "< 1 min";
+    if (mins < 60) return `${Math.round(mins)} min`;
+    const hours = Math.floor(mins / 60);
+    const rest = Math.round(mins % 60);
+    if (rest === 0) {
+      return `${hours} hr${hours > 1 ? "s" : ""}`;
+    }
+    return `${hours} hr${hours > 1 ? "s" : ""} ${rest} min`;
+  }
+
+  function showDirectionsRoute(spotLatLng, spotName) {
+    if (!studyMap) return;
+
+    // Make sure we know the user's location
+    if (!userLatLng) {
+      studyMap.locate({
+        setView: true,
+        maxZoom: 16,
+        enableHighAccuracy: true,
+      });
+      alert(
+        "Detecting your location first. Please tap Get Directions again in a moment."
+      );
+      return;
+    }
+
+    // Clear previous route & popup
+    clearRoute();
+
+    const user = { lat: userLatLng.lat, lng: userLatLng.lng };
+    const dest = { lat: spotLatLng.lat, lng: spotLatLng.lng };
+
+    // OSRM public demo server (road-network routing)
+    const url = `https://router.project-osrm.org/route/v1/driving/${user.lng},${user.lat};${dest.lng},${dest.lat}?overview=full&geometries=geojson`;
+
+    fetch(url)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.routes || !data.routes.length) {
+          alert("No route found for this destination.");
+          return;
+        }
+
+        const route = data.routes[0];
+
+        // Convert [lng, lat] → [lat, lng] for Leaflet
+        const coords = route.geometry.coordinates.map(([lng, lat]) => [
+          lat,
+          lng,
+        ]);
+
+        // Distance (m → km) and duration (s → minutes)
+        const distanceKm = route.distance / 1000;
+        const baseMinutes = route.duration / 60;
+
+        // ✅ Solid bold green line
+        activeRouteLine = L.polyline(coords, {
+          color: "#22c55e", // green
+          weight: 6, // bold
+          opacity: 1,
+        }).addTo(studyMap);
+
+        // Approximate times for different modes, using distance
+        const modes = {
+          Walking: 5, // km/h
+          Commute: 18,
+          Biking: 15,
+          Motorcycle: 30,
+          Car: 40,
+        };
+
+        let rows = "";
+        Object.entries(modes).forEach(([label, speed]) => {
+          const mins = (distanceKm / speed) * 60;
+          rows += `
+            <tr>
+              <td>${label}</td>
+              <td style="text-align:right;">${formatMinutes(mins)}</td>
+            </tr>
+          `;
+        });
+
+        // Use the route's midpoint as popup anchor
+        const midIndex = Math.floor(coords.length / 2);
+        const midLatLng = coords[midIndex];
+
+        activeRoutePopup = L.popup({
+          closeButton: true,
+          autoPan: true,
+          maxWidth: 260,
+        })
+          .setLatLng(midLatLng)
+          .setContent(`
+            <div style="font-family:'Nunito Sans',system-ui; font-size:13px;">
+              <strong>${spotName}</strong><br/>
+              Distance (by road): ${distanceKm.toFixed(2)} km<br/>
+              <small>Approx. driving time (OSRM): ${formatMinutes(
+                baseMinutes
+              )}</small>
+              <table style="width:100%; margin-top:6px; border-collapse:collapse;">
+                <tbody>
+                  ${rows}
+                </tbody>
+              </table>
+              <small style="color:#666;">Route based on OpenStreetMap road network.</small>
+            </div>
+          `)
+          .openOn(studyMap);
+
+        // Fit map to show full route
+        studyMap.fitBounds(activeRouteLine.getBounds(), {
+          padding: [80, 80],
+        });
+      })
+      .catch((err) => {
+        console.error("Routing error:", err);
+        alert("Unable to fetch route. Please try again in a moment.");
+      });
+  }
 });

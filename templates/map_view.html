@@ -10,17 +10,18 @@
 <nav class="navbar">
   <div class="nav-container">
     <div class="nav-brand">
+      <img src="{% static 'imgs/Studyhive_Logo.png' %}" alt="StudyHive Logo" class="nav-logo">
       <span class="brand-study">Study</span><span class="brand-hive">Hive</span>
     </div>
 
-        <ul class="nav-menu">
-          <li><a href="{% url 'core:map_view' %}" class="nav-link active">Map</a></li>
-          {% if user.userprofile.is_contributor %}
-            <li><a href="{% url 'core:my_listings' %}" class="nav-link">My Spots</a></li>
-          {% else %}
-            <li><a href="{% url 'core:apply_staff' %}" class="nav-link">Become Contributor</a></li>
-          {% endif %}
-           <li><a href="{% url 'core:about' %}" class="nav-link">About</a></li>
+    <ul class="nav-menu">
+      <li><a href="{% url 'core:map_view' %}" class="nav-link active">Map</a></li>
+      {% if user.userprofile.is_contributor %}
+        <li><a href="{% url 'core:my_listings' %}" class="nav-link">My Spots</a></li>
+      {% else %}
+        <li><a href="{% url 'core:apply_staff' %}" class="nav-link">Become Contributor</a></li>
+      {% endif %}
+       <li><a href="{% url 'core:about' %}" class="nav-link">About</a></li>
     </ul>
 
     <div class="nav-right">
@@ -63,6 +64,7 @@
     </div>
   </div>
 </nav>
+
 
 <div class="map-wrapper">
   <aside class="map-sidebar" id="mapSidebar">
