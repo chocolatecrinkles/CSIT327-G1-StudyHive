@@ -1,20 +1,79 @@
-/* ============================================================
-   MY LISTINGS - DELETE MODAL FUNCTIONALITY + CAROUSEL
-============================================================ */
+// ===== USER DROPDOWN FUNCTIONALITY =====
+const dropdownBtn = document.getElementById('dropdownBtn');
+const userDropdown = document.getElementById('userDropdown');
 
+if (dropdownBtn && userDropdown) {
+  dropdownBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    userDropdown.classList.toggle('show');
+  });
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!userDropdown.contains(e.target) && !dropdownBtn.contains(e.target)) {
+      userDropdown.classList.remove('show');
+    }
+  });
+}
+
+// ===== LOGOUT MODAL FUNCTIONALITY =====
+const logoutLink = document.getElementById('logoutLink');
+const logoutModal = document.getElementById('logoutModal');
+const cancelLogout = document.getElementById('cancelLogout');
+const confirmLogout = document.getElementById('confirmLogout');
+
+if (logoutLink && logoutModal) {
+  logoutLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    logoutModal.classList.add('show');
+    if (userDropdown) userDropdown.classList.remove('show');
+  });
+}
+
+if (cancelLogout && logoutModal) {
+  cancelLogout.addEventListener('click', () => {
+    logoutModal.classList.remove('show');
+  });
+}
+
+if (confirmLogout && logoutLink) {
+  confirmLogout.addEventListener('click', () => {
+    const logoutUrl = logoutLink.getAttribute('href');
+    window.location.href = logoutUrl;
+  });
+}
+
+// Close logout modal when clicking outside
+if (logoutModal) {
+  logoutModal.addEventListener('click', (e) => {
+    if (e.target === logoutModal) {
+      logoutModal.classList.remove('show');
+    }
+  });
+}
+
+// Close dropdown / modal with ESC
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if (userDropdown && userDropdown.classList.contains('show')) {
+      userDropdown.classList.remove('show');
+    }
+    if (logoutModal && logoutModal.classList.contains('show')) {
+      logoutModal.classList.remove('show');
+    }
+  }
+});
+
+
+// ===== MY LISTINGS - DELETE MODAL + CAROUSEL =====
 document.addEventListener("DOMContentLoaded", () => {
-  /* ============================================================
-       ELEMENTS
-  ============================================================ */
   const deleteModal = document.getElementById("deleteModal");
   const deleteForm = document.getElementById("deleteForm");
   const listingNameDisplay = document.getElementById("listingNameDisplay");
   const cancelDeleteBtn = document.getElementById("cancelDelete");
   const deleteButtons = document.querySelectorAll(".btn-delete, .delete-btn");
 
-  /* ============================================================
-       OPEN DELETE MODAL
-  ============================================================ */
+  // ---------- OPEN DELETE MODAL ----------
   deleteButtons.forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.preventDefault();
@@ -22,59 +81,50 @@ document.addEventListener("DOMContentLoaded", () => {
       const listingId = btn.dataset.listingId;
       const listingName = btn.dataset.listingName;
 
-      if (!listingId) return;
+      if (!listingId || !deleteModal || !deleteForm) return;
 
-      // Update modal content
       listingNameDisplay.textContent = listingName || "";
-
-      // Set form action to delete URL
       deleteForm.action = `/delete-listing/${listingId}/`;
 
-      // Show modal
-      deleteModal.classList.add("active");
+      deleteModal.classList.add("show");   // use 'show' to match CSS
     });
   });
 
-  /* ============================================================
-       CLOSE DELETE MODAL
-  ============================================================ */
-  function closeModal() {
-    deleteModal.classList.remove("active");
-  }
-
-  // Close on cancel button
-  if (cancelDeleteBtn) {
-    cancelDeleteBtn.addEventListener("click", closeModal);
-  }
-
-  // Close on overlay click
-  if (deleteModal) {
-    const overlay = deleteModal.querySelector(".modal-overlay");
-    if (overlay) {
-      overlay.addEventListener("click", closeModal);
+  // ---------- CLOSE DELETE MODAL ----------
+  function closeDeleteModal() {
+    if (deleteModal) {
+      deleteModal.classList.remove("show");
     }
   }
 
-  // Close on ESC key
+  if (cancelDeleteBtn) {
+    cancelDeleteBtn.addEventListener("click", closeDeleteModal);
+  }
+
+  if (deleteModal) {
+    deleteModal.addEventListener("click", (e) => {
+      if (e.target === deleteModal) {
+        closeDeleteModal();
+      }
+    });
+  }
+
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && deleteModal.classList.contains("active")) {
-      closeModal();
+    if (e.key === "Escape" && deleteModal && deleteModal.classList.contains("show")) {
+      closeDeleteModal();
     }
   });
 
-  /* ============================================================
-       LISTING IMAGE CAROUSELS (auto if more than 1 image)
-  ============================================================ */
+  // ---------- LISTING IMAGE CAROUSELS ----------
   function initListingCarousels() {
     const carousels = document.querySelectorAll(".listing-image-carousel");
 
     carousels.forEach((carousel) => {
       const images = carousel.querySelectorAll(".listing-carousel-image");
-      if (images.length <= 1) return; // only apply when > 1 image
+      if (images.length <= 1) return;
 
       let currentIndex = 0;
 
-      // ensure only first is active initially
       images.forEach((img, idx) => {
         img.classList.toggle("active", idx === 0);
       });
@@ -85,7 +135,6 @@ document.addEventListener("DOMContentLoaded", () => {
         images[currentIndex].classList.add("active");
       }
 
-      // simple auto-rotate, no arrows / buttons
       setInterval(() => {
         showImage(currentIndex + 1);
       }, 4000);
@@ -94,11 +143,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   initListingCarousels();
 
-  /* ============================================================
-       CARD HOVER (just smooth transition)
-  ============================================================ */
+  // ---------- CARD HOVER ----------
   const listingCards = document.querySelectorAll(".listing-card");
-
   listingCards.forEach((card) => {
     card.addEventListener("mouseenter", () => {
       card.style.transition = "all 0.3s ease";

@@ -17,42 +17,85 @@
 </head>
 
 <body>
-  <!-- Decorative Background Elements -->
-  <div class="bg-decoration"></div>
-
-  <div class="listings-page">
-
-    <!-- Top Header -->
-    <header class="header-bar">
-      <a href="{% url 'core:map_view' %}" class="logo">
-        <i class="fas fa-book-reader logo-icon"></i>
+  <!-- NAVBAR - Matching About Page -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="nav-brand">
+        <img src="{% static 'imgs/Studyhive_Logo.png' %}" alt="StudyHive Logo" class="nav-logo">
         <span class="brand-study">Study</span><span class="brand-hive">Hive</span>
-      </a>
-      <a href="{% url 'core:map_view' %}" class="back-button">
-        <i class="fas fa-arrow-left"></i> 
-        <span>Back to Home</span>
-      </a>
-    </header>
-
-    <!-- Page Header -->
-    <div class="page-header">
-      <div class="header-icon">
-        <i class="fas fa-list-alt"></i>
       </div>
-      <h1 class="page-title">My Listings</h1>
-      <p class="page-subtitle">Manage your shared study spaces</p>
-    </div>
 
-    <!-- Main Content -->
-    <main class="main-container">
+      <ul class="nav-menu">
+        <li><a href="{% url 'core:map_view' %}" class="nav-link">Map</a></li>
+        {% if user.userprofile.is_contributor %}
+          <li><a href="{% url 'core:my_listings' %}" class="nav-link active">My Spots</a></li>
+        {% else %}
+          <li><a href="{% url 'core:apply_staff' %}" class="nav-link">Become Contributor</a></li>
+        {% endif %}
+        <li><a href="{% url 'core:about' %}" class="nav-link">About</a></li>
+      </ul>
+
+      <div class="nav-right">
+        <div class="user-dropdown">
+          <button class="user-avatar" id="dropdownBtn">
+            {% if user.userprofile.avatar_url %}
+              <img src="{{ user.userprofile.avatar_url }}" alt="Profile">
+            {% else %}
+              <img src="{% static 'imgs/avatar_placeholder.jpg' %}" alt="Profile">
+            {% endif %}
+          </button>
+
+          <div class="dropdown-menu" id="userDropdown">
+            <div class="dropdown-user">
+              <img src="{% if user.userprofile.avatar_url %}{{ user.userprofile.avatar_url }}{% else %}{% static 'imgs/avatar_placeholder.jpg' %}{% endif %}" alt="">
+              <div>
+                <strong>{{ user.first_name }} {{ user.last_name }}</strong><br>
+                <small>{{ user.email }}</small>
+              </div>
+            </div>
+            <div class="dropdown-divider"></div>
+
+            {% if user.userprofile.is_contributor %}
+              <a href="{% url 'core:profile' %}">👤 My Profile</a>
+              <a href="{% url 'core:my_listings' %}">📍 My Listings</a>
+              <a href="{% url 'core:my_reviews' %}">⭐ My Reviews</a>
+              <a href="{% url 'core:create_listing' %}">➕ Create Listing</a>
+              <a href="{% url 'core:settings' %}">⚙️ Settings</a>
+            {% else %}
+              <a href="{% url 'core:profile' %}">👤 My Profile</a>
+              <a href="{% url 'core:my_reviews' %}">⭐ My Reviews</a>
+              <a href="{% url 'core:apply_staff' %}">💼 Become a Contributor</a>
+              <a href="{% url 'core:settings' %}">⚙️ Settings</a>
+            {% endif %}
+
+            <div class="dropdown-divider"></div>
+            <a href="{% url 'core:logout' %}" class="logout-link" id="logoutLink">🚪 Logout</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO SECTION - Matching About Page -->
+  <section class="hero-section">
+    <div class="hero-content">
+      <h1>My Listings</h1>
+      <p>Manage your shared study spaces</p>
+    </div>
+  </section>
+
+  <!-- CONTENT SECTION - Matching About Page Structure -->
+  <div class="content-section">
+    <div class="container">
       
       {% if my_listings %}
         <!-- Stats Summary -->
-        <div class="stats-bar">
-          <div class="stat-item">
-            <i class="fas fa-map-marker-alt"></i>
-            <span class="stat-number">{{ my_listings|length }}</span>
-            <span class="stat-label">Total Listings</span>
+        <div class="stats-section">
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-number">{{ my_listings|length }}</div>
+              <div class="stat-label">Total Listings</div>
+            </div>
           </div>
         </div>
 
@@ -157,24 +200,39 @@
         </div>
       {% endif %}
 
-    </main>
+    </div>
   </div>
 
+  <!-- FOOTER - Matching About Page -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="social-links">
+        <a href="#" class="social-link" aria-label="Visit StudyHive on Twitter">
+          <i class="fab fa-twitter"></i>
+        </a>
+        <a href="#" class="social-link" aria-label="Visit StudyHive on Facebook">
+          <i class="fab fa-facebook"></i>
+        </a>
+        <a href="#" class="social-link" aria-label="Visit StudyHive on Instagram">
+          <i class="fab fa-instagram"></i>
+        </a>
+        <a href="#" class="social-link" aria-label="Visit StudyHive on LinkedIn">
+          <i class="fab fa-linkedin"></i>
+        </a>
+      </div>
+
+      <p class="footer-text">
+        © 2025 StudyHive. Helping CIT-U students discover the best study spaces in Cebu City. 🐝
+      </p>
+    </div>
+  </footer>
+
   <!-- Delete Confirmation Modal -->
-  <div id="deleteModal" class="modal">
-    <div class="modal-overlay"></div>
-    <div class="modal-content">
-      <div class="modal-header">
-        <div class="modal-icon warning">
-          <i class="fas fa-exclamation-triangle"></i>
-        </div>
-        <h3 class="modal-title">Delete Listing?</h3>
-      </div>
-      
-      <div class="modal-body">
-        <p>Are you sure you want to delete <strong id="listingNameDisplay"></strong>?</p>
-        <p class="modal-warning">This action cannot be undone.</p>
-      </div>
+  <div id="deleteModal" class="modal-overlay">
+    <div class="modal-box">
+      <h2>Delete Listing?</h2>
+      <p>Are you sure you want to delete <strong id="listingNameDisplay"></strong>?</p>
+      <p class="modal-warning">This action cannot be undone.</p>
 
       <div class="modal-actions">
         <button type="button" class="btn-cancel" id="cancelDelete">
