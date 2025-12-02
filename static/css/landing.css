@@ -689,6 +689,69 @@ body {
   transition: transform 0.3s;
 }
 
+.card-img-wrap.has-carousel {
+  position: relative;
+}
+
+.card-carousel {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.card-slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+.card-slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card-slide.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+
+.card-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  z-index: 30;
+  transition: all 0.2s ease;
+}
+
+.card-nav.prev {
+  left: 10px;
+}
+
+.card-nav.next {
+  right: 10px;
+}
+
+.card-nav:hover {
+  background: rgba(0, 0, 0, 0.75);
+  transform: translateY(-50%) scale(1.05);
+}
+
+
 .spot-card:hover .card-img-wrap img {
   transform: scale(1.08);
 }
