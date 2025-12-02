@@ -198,7 +198,9 @@ const cardsGrid = document.getElementById('cardsGrid');
 if (sortSelect && cardsGrid) {
   sortSelect.addEventListener('change', (e) => {
     const sortValue = e.target.value;
-    const cardsArray = Array.from(spotCards);
+    // Get fresh list of cards each time we sort
+    const currentCards = document.querySelectorAll('.spot-card');
+    const cardsArray = Array.from(currentCards);
     
     cardsArray.sort((a, b) => {
       switch(sortValue) {
@@ -216,7 +218,10 @@ if (sortSelect && cardsGrid) {
           return 0;
           
         case 'popular':
-          return 0;
+          // Get trending status from data attribute
+          const trendingA = a.getAttribute('data-trending') === 'true' ? 1 : 0;
+          const trendingB = b.getAttribute('data-trending') === 'true' ? 1 : 0;
+          return trendingB - trendingA;
           
         default:
           return 0;

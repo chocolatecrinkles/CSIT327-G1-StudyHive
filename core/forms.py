@@ -99,7 +99,7 @@ class CustomAuthenticationForm(AuthenticationForm):
     username = forms.CharField(
         widget=forms.TextInput(attrs={
             "class": COMMON_INPUT_CLASSES,
-            "placeholder": "Enter your username",
+            "placeholder": "Enter your username or email",
         })
     )
     password = forms.CharField(

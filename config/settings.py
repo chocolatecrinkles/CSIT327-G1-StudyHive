@@ -157,3 +157,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # For developm
 # EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 # EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 # DEFAULT_FROM_EMAIL = 'StudyHive <noreply@studyhive.com>'
+
+AUTHENTICATION_BACKENDS = [
+    'core.auth_backends.EmailOrUsernameBackend',  
+    'django.contrib.auth.backends.ModelBackend',
+]

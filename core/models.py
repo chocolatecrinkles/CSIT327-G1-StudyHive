@@ -1,8 +1,9 @@
+from django.utils import timezone
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db.models import Avg, Q
-import time
+from datetime import time
 
 # --- 1. MANAGERS ---
 class CheckInManager(models.Manager):
@@ -75,6 +76,26 @@ class StudySpot(models.Model):
 
     def __str__(self):
         return self.name
+    
+    @property
+    def is_closed(self):
+        """Returns True if the spot is currently closed based on time and 24/7 setting."""
+        if self.open_24_7 or not self.closing_time:
+            return False
+
+        now = timezone.localtime().time()
+
+        # Overnight closing (e.g., open 6PM → close 2AM)
+        if self.closing_time < self.opening_time:
+            # Spot closes after midnight
+            if now >= self.closing_time and now < self.opening_time:
+                return True
+        else:
+            # Normal closing
+            if now >= self.closing_time or now < self.opening_time:
+                return True
+
+        return False
 
 class StaffApplication(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
