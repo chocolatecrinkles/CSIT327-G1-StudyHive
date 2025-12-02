@@ -945,3 +945,27 @@ def about(request):
         "city_count": city_count,
     }
     return render(request, "about.html", context)
+
+@login_required(login_url="core:login")
+def delete_review(request, review_id):
+    """
+    Delete a review (only if it belongs to the current user)
+    """
+    review = get_object_or_404(Review, id=review_id)
+    
+    # Security check: only the review author can delete
+    if review.user != request.user:
+        messages.error(request, "You are not authorized to delete this review.")
+        return redirect("core:my_reviews")
+    
+    if request.method == "POST":
+        spot = review.spot
+        review.delete()
+        
+        # Update the spot's average rating after deletion
+        spot.update_average_rating()
+        
+        messages.success(request, "Review successfully deleted.")
+        return redirect("core:my_reviews")
+    
+    return redirect("core:my_reviews")
