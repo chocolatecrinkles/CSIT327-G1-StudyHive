@@ -9,6 +9,10 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
+from django.utils import timezone
+from datetime import time
+from .models import StudySpot, Review
+from .forms import ReviewForm
 
 
 #checkins import
@@ -608,6 +612,34 @@ def apply_staff(request):
 
 def studyspot_detail(request, spot_id):
     spot = get_object_or_404(StudySpot, id=spot_id)
+    
+    # ===============================
+    # Auto check-out logic
+    # ===============================
+    now = timezone.localtime().time()  # current local time
+
+    if not spot.open_24_7 and spot.closing_time:
+        # Handle overnight closing (closing_time < opening_time)
+        if spot.closing_time < spot.opening_time:
+            # Spot closes after midnight
+            if now >= spot.closing_time and now < spot.opening_time:
+                active_checkins = spot.active_users.filter(is_active=True)
+                for checkin in active_checkins:
+                    checkin.is_active = False
+                    checkin.check_out_time = timezone.now()
+                    checkin.save()
+        else:
+            # Normal closing
+            if now >= spot.closing_time:
+                active_checkins = spot.active_users.filter(is_active=True)
+                for checkin in active_checkins:
+                    checkin.is_active = False
+                    checkin.check_out_time = timezone.now()
+                    checkin.save()
+
+    # ===============================
+    # Handle POST review submission
+    # ===============================
     reviews = spot.reviews.all().order_by("-created_at")
 
     if request.method == "POST":
@@ -723,10 +755,28 @@ def check_in_out_toggle(request, spot_id):
     """
     Toggles the user's check-in status at a specific StudySpot.
     Ensures a user can only be active in one place at a time.
+    Prevents check-ins if the spot is closed.
     """
     if request.method == 'POST':
         spot = get_object_or_404(StudySpot, id=spot_id)
         user = request.user
+        
+        # Check if spot is closed (not 24/7)
+        now = timezone.localtime().time()
+        spot_closed = False
+
+        if not spot.open_24_7 and spot.closing_time:
+            # Overnight handling
+            if spot.closing_time < spot.opening_time:
+                if now >= spot.closing_time and now < spot.opening_time:
+                    spot_closed = True
+            else:
+                if now >= spot.closing_time:
+                    spot_closed = True
+        
+        if spot_closed:
+            messages.error(request, f"{spot.name} is currently closed. You cannot check in now.")
+            return redirect('core:studyspot_detail', spot_id=spot.id)
         
         # Get the user's active check-in (if any)
         active_checkin = CheckIn.objects.filter(user=user, is_active=True).first()
@@ -734,13 +784,15 @@ def check_in_out_toggle(request, spot_id):
         # Scenario A: User is already checked into THIS spot (Action: CHECK OUT)
         if active_checkin and active_checkin.spot == spot:
             active_checkin.is_active = False
+            active_checkin.check_out_time = timezone.now()
             active_checkin.save()
             messages.info(request, f"You have successfully checked out of {spot.name}.")
-            
+        
         # Scenario B: User is checked into a DIFFERENT spot (Action: SWITCH)
         elif active_checkin and active_checkin.spot != spot:
             # Check out of old spot
             active_checkin.is_active = False
+            active_checkin.check_out_time = timezone.now()
             active_checkin.save()
             messages.warning(request, f"You checked out of {active_checkin.spot.name}.")
             
