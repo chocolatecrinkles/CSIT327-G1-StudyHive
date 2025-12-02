@@ -278,11 +278,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* ============================================================
        OPENING HOURS: HIDE WHEN 24/7
+       (KEEP LAST MANUAL TIME VALUES)
   ============================================================ */
   const open247 = document.querySelector('input[name="open_24_7"]');
   const hoursGroup = document.getElementById("hoursGroup");
   const openingTime = document.querySelector('input[name="opening_time"]');
   const closingTime = document.querySelector('input[name="closing_time"]');
+
+  // store last manually set times
+  let storedOpening = openingTime ? openingTime.value : "";
+  let storedClosing = closingTime ? closingTime.value : "";
+
+  if (openingTime) {
+    openingTime.addEventListener("input", () => {
+      storedOpening = openingTime.value;
+    });
+  }
+  if (closingTime) {
+    closingTime.addEventListener("input", () => {
+      storedClosing = closingTime.value;
+    });
+  }
 
   function updateHoursVisibility() {
     if (!open247 || !hoursGroup || !openingTime || !closingTime) return;
@@ -291,10 +307,14 @@ document.addEventListener("DOMContentLoaded", () => {
       hoursGroup.classList.add("hidden");
       openingTime.required = false;
       closingTime.required = false;
+      // do NOT change values here
     } else {
       hoursGroup.classList.remove("hidden");
       openingTime.required = true;
       closingTime.required = true;
+      // restore last manual values (if any)
+      if (storedOpening) openingTime.value = storedOpening;
+      if (storedClosing) closingTime.value = storedClosing;
     }
   }
 
@@ -302,6 +322,31 @@ document.addEventListener("DOMContentLoaded", () => {
     open247.addEventListener("change", updateHoursVisibility);
     setTimeout(updateHoursVisibility, 80);
   }
+
+  /* ============================================================
+       AMENITIES VALIDATION (AT LEAST ONE)
+  ============================================================ */
+  const amenityCheckboxes = document.querySelectorAll(
+    '.amenities-group input[type="checkbox"]'
+  );
+  const amenitiesError = document.querySelector(".amenities-error");
+
+  function hasAmenitySelected() {
+    return Array.from(amenityCheckboxes).some((cb) => cb.checked);
+  }
+
+  function updateAmenitiesValidity() {
+    if (!amenityCheckboxes.length) return true;
+    const ok = hasAmenitySelected();
+    if (amenitiesError) {
+      amenitiesError.classList.toggle("hidden", ok);
+    }
+    return ok;
+  }
+
+  amenityCheckboxes.forEach((cb) => {
+    cb.addEventListener("change", updateAmenitiesValidity);
+  });
 
   /* ============================================================
        FORM DIRTY CHECK
@@ -334,10 +379,24 @@ document.addEventListener("DOMContentLoaded", () => {
     form.addEventListener("input", checkDirty);
     form.addEventListener("change", checkDirty);
 
+    // Block submit if no amenity is selected
+    form.addEventListener("submit", (e) => {
+      if (!updateAmenitiesValidity()) {
+        e.preventDefault();
+        const amenitiesGroup = document.querySelector(".amenities-group");
+        if (amenitiesGroup) {
+          amenitiesGroup.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }
+    });
+
     /* ============================================================
          SUPABASE UPLOAD ON SUBMIT (ONLY IF NEW IMAGES)
     ============================================================ */
     form.addEventListener("submit", async (e) => {
+      // if previous handler already blocked submit, stop here
+      if (e.defaultPrevented) return;
+
       // if no new files, let Django handle everything (keeps old images)
       if (!imageUpload || !imageUpload.files || imageUpload.files.length === 0) {
         return;

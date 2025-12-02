@@ -14,7 +14,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 
   <!-- Icons -->
-  <script src="https://kit.fontawesome.com/a2d9d5c6b2.js" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
   <!-- Page CSS -->
   <link rel="stylesheet" href="{% static 'css/edit_listing.css' %}">
@@ -24,15 +24,11 @@
   <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <!-- Decorative Background Elements -->
-  <div class="bg-decoration"></div>
-
   <div class="create-page">
 
     <!-- Top Header -->
     <header class="header-bar">
       <a href="{% url 'core:map_view' %}" class="logo">
-        <i class="fas fa-book-reader logo-icon"></i>
         <span class="brand-study">Study</span><span class="brand-hive">Hive</span>
       </a>
       <a href="{% url 'core:my_listings' %}" class="back-button">
@@ -45,15 +41,16 @@
     <main class="form-container">
       
       <!-- Header Section -->
-      <div class="form-header">
-        <div class="form-header-icon">
-          <i class="fas fa-edit"></i>
+        <div class="form-header">
+          <div class="form-header-icon">
+            <img src="{% static 'imgs/Studyhive_Logo.png' %}" 
+                alt="StudyHive Logo" 
+                class="form-header-logo">
+          </div>
+          <h1 class="page-title">Edit Listing</h1>
+          <p class="page-subtitle">Update your study space details</p>
         </div>
-        <h1 class="page-title">Edit Listing</h1>
-        <p class="page-subtitle">Update your study space details</p>
-      </div>
 
-      <!-- IMPORTANT: data-spot-id used by JS for Supabase path -->
       <form method="POST" enctype="multipart/form-data" class="listing-form" data-spot-id="{{ spot.id }}">
         {% csrf_token %}
 
@@ -185,7 +182,17 @@
               </label>
             </div>
           </div>
+
+          <p class="amenities-error hidden">
+              Please select at least one amenity.
+            </p>
         </div>
+
+        <p class="amenities-error hidden">
+          Please select at least one amenity.
+        </p>
+
+        
 
         <!-- Opening Hours -->
         <div class="form-group hours-group" id="hoursGroup">
@@ -198,12 +205,22 @@
           <div class="hours-wrapper">
             <div class="hours-input">
               <label>Opens At</label>
-              <input type="time" id="opening_time" name="opening_time" value="{{ spot.opening_time }}">
+              <input
+                type="time"
+                id="opening_time"
+                name="opening_time"
+                value="{{ spot.opening_time|time:'H:i' }}"
+              >
             </div>
 
             <div class="hours-input">
               <label>Closes At</label>
-              <input type="time" id="closing_time" name="closing_time" value="{{ spot.closing_time }}">
+              <input
+                type="time"
+                id="closing_time"
+                name="closing_time"
+                value="{{ spot.closing_time|time:'H:i' }}"
+              >
             </div>
           </div>
         </div>
@@ -276,7 +293,7 @@
     <div class="map-modal-content">
 
       <button class="map-close-btn" id="closeMapModal" title="Close">
-        &times;
+        <i class="fas fa-times"></i>
       </button>
 
       <div class="map-modal-header">
