@@ -10,14 +10,113 @@
   
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-Avb2QiuDEEvB4bZJYdft2mNjVShBftLdPG8FJ0V7irTLQ8Uo0qcPxh4Plq7G5tGm0rU+1SPhVotteLpBERwTkw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   
-  <!-- <link rel="stylesheet" href="{% static 'css/listings_shared.css' %}"> -->
-  <link rel="stylesheet" href="{% static 'css/details.css' %}?v=2">
+  <link rel="stylesheet" href="{% static 'css/details.css' %}?v=4">
+  <style>
+    /* Detail Page Image Carousel */
+    .detail-image-carousel {
+      position: relative;
+      width: 100%;
+      height: 450px;
+      overflow: hidden;
+      border-radius: 16px;
+      background: #2a4a42;
+    }
+
+    .detail-image-carousel .carousel-image {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      transform: translateX(0);
+      transition: opacity 0.35s ease, transform 0.35s ease;
+      pointer-events: none;
+    }
+
+    .detail-image-carousel .carousel-image.active {
+      opacity: 1;
+      z-index: 2;
+      pointer-events: auto;
+    }
+
+    .detail-image-carousel .carousel-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      border: none;
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 18px;
+      z-index: 10;
+      transition: all 0.2s ease;
+    }
+
+    .detail-image-carousel .carousel-btn:hover {
+      background: rgba(0, 0, 0, 0.85);
+      transform: translateY(-50%) scale(1.15);
+    }
+
+    .detail-image-carousel .carousel-btn.prev {
+      left: 16px;
+    }
+
+    .detail-image-carousel .carousel-btn.next {
+      right: 16px;
+    }
+
+    .detail-image-carousel .carousel-btn i {
+      pointer-events: none;
+    }
+
+    /* Slide animations */
+    .detail-image-carousel .carousel-image.slide-in-right {
+      transform: translateX(100%);
+    }
+
+    .detail-image-carousel .carousel-image.slide-in-left {
+      transform: translateX(-100%);
+    }
+
+    .detail-image-carousel .carousel-image.slide-from-right {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .detail-image-carousel .carousel-image.slide-from-left {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .detail-image-carousel .carousel-image.slide-out-left {
+      opacity: 0;
+      transform: translateX(-100%);
+    }
+
+    .detail-image-carousel .carousel-image.slide-out-right {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+
+    /* Trending badge positioning for carousel */
+    .image-wrapper .trending-badge {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      z-index: 15;
+    }
+  </style>
 </head>
 
 <body>
-
-  
-
 
   <div class="detail-container">
 
@@ -25,14 +124,41 @@
       <i class="fas fa-arrow-left"></i> Back
     </a>
 
-    {% if spot.image_url %}
-    <div class="image-wrapper">
-      <img src="{{ spot.image_url }}" alt="{{ spot.name }}">
-      {% if spot.is_trending %}
-        <div class="trending-badge"><i class="fas fa-fire"></i> Trending</div>
+    {# --- IMAGE / CAROUSEL LOGIC --- #}
+    {% with images=spot.images %}
+      {% if images and images|length > 1 %}
+        <div class="image-wrapper">
+          <div class="detail-image-carousel">
+            {% for img in images %}
+              <img src="{{ img }}" alt="{{ spot.name }}" class="carousel-image{% if forloop.first %} active{% endif %}">
+            {% endfor %}
+            <button class="carousel-btn prev" type="button">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+            <button class="carousel-btn next" type="button">
+              <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+          {% if spot.is_trending %}
+            <div class="trending-badge"><i class="fas fa-fire"></i> Trending</div>
+          {% endif %}
+        </div>
+      {% elif images and images|length == 1 %}
+        <div class="image-wrapper">
+          <img src="{{ images.0 }}" alt="{{ spot.name }}">
+          {% if spot.is_trending %}
+            <div class="trending-badge"><i class="fas fa-fire"></i> Trending</div>
+          {% endif %}
+        </div>
+      {% elif spot.image_url %}
+        <div class="image-wrapper">
+          <img src="{{ spot.image_url }}" alt="{{ spot.name }}">
+          {% if spot.is_trending %}
+            <div class="trending-badge"><i class="fas fa-fire"></i> Trending</div>
+          {% endif %}
+        </div>
       {% endif %}
-    </div>
-    {% endif %}
+    {% endwith %}
 
     <h1>{{ spot.name }}</h1>
     
@@ -63,85 +189,68 @@
     </div>
     {% endif %}
 
+    <div class="checkin-section">
+        {% if user.is_authenticated %}
+            {% with active_checkin=user.checkins.active_only.first %}
+                <form method="POST" action="{% url 'core:check_in_out_toggle' spot.id %}" class="checkin-form">
+                    {% csrf_token %}
 
+                    {% if active_checkin %}
+                        {# User is checked in somewhere #}
+                        {% if active_checkin.spot == spot %}
+                            {# Scenario 1: User is checked into *this* spot (Show CHECK OUT) #}
+                            <button type="submit" class="btn check-out-btn" title="Click to check out">
+                                <i class="fas fa-sign-out-alt"></i> Checked In Here (Click to Leave)
+                            </button>
+                        {% else %}
+                            {# Scenario 2: User is checked into a *different* spot (Show TOGGLE) #}
+                            <button type="submit" class="btn check-in-btn toggle-btn" title="Check out of {{ active_checkin.spot.name }} and check in here">
+                                <i class="fas fa-exchange-alt"></i> Switch to {{ spot.name }}
+                            </button>
+                            <p class="checkin-status-warning">Currently checked in at <strong>{{ active_checkin.spot.name }}</strong></p>
+                        {% endif %}
 
-
-
-
-<div class="checkin-section">
-    {% if user.is_authenticated %}
-        {% with active_checkin=user.checkins.active_only.first %}
-            <form method="POST" action="{% url 'core:check_in_out_toggle' spot.id %}" class="checkin-form">
-                {% csrf_token %}
-
-                {% if active_checkin %}
-                    {# User is checked in somewhere #}
-                    {% if active_checkin.spot == spot %}
-                        {# Scenario 1: User is checked into *this* spot (Show CHECK OUT) #}
-                        <button type="submit" class="btn check-out-btn" title="Click to check out">
-                            <i class="fas fa-sign-out-alt"></i> Checked In Here (Click to Leave)
-                        </button>
                     {% else %}
-                        {# Scenario 2: User is checked into a *different* spot (Show TOGGLE) #}
-                        <button type="submit" class="btn check-in-btn toggle-btn" title="Check out of {{ active_checkin.spot.name }} and check in here">
-                            <i class="fas fa-exchange-alt"></i> Switch to {{ spot.name }}
+                        {# Scenario 3: User is not checked in anywhere (Show CHECK IN) #}
+                        <button type="submit" class="btn check-in-btn" title="Click to check in">
+                            <i class="fas fa-sign-in-alt"></i> Check In Now
                         </button>
-                        <p class="checkin-status-warning">Currently checked in at <strong>{{ active_checkin.spot.name }}</strong></p>
                     {% endif %}
-
-                {% else %}
-                    {# Scenario 3: User is not checked in anywhere (Show CHECK IN) #}
-                    <button type="submit" class="btn check-in-btn" title="Click to check in">
-                        <i class="fas fa-sign-in-alt"></i> Check In Now
-                    </button>
-                {% endif %}
-            </form>
-        {% endwith %}
-    {% else %}
-        <p class="checkin-login-prompt">
-            <a href="{% url 'core:login' %}">Log in</a> to see who is studying here.
-        </p>
-    {% endif %}
-    
-    <div class="checkin-count">
-        <span class="count-value">{{ spot.active_count }}</span> users currently checked in.
+                </form>
+            {% endwith %}
+        {% else %}
+            <p class="checkin-login-prompt">
+                <a href="{% url 'core:login' %}">Log in</a> to see who is studying here.
+            </p>
+        {% endif %}
+        
+        <div class="checkin-count">
+            <span class="count-value">{{ spot.active_count }}</span> users currently checked in.
+        </div>
     </div>
-</div>
 
-
-<!-- visible look at who is the checked ins -->
-{% if spot.active_count > 0 %}
-<div class="checked-in-users">
-    <h4><i class="fas fa-users"></i> Currently Studying Here ({{ spot.active_count }})</h4>
-    <div class="users-grid">
-        {% for checkin in spot.active_users.all %}
-            {% if checkin.is_active %}
-            <div class="user-card">
-                <img src="{% if checkin.user.userprofile.avatar_url %}{{ checkin.user.userprofile.avatar_url }}{% else %}{% static 'imgs/avatar_placeholder.jpg' %}{% endif %}" 
-                     alt="{{ checkin.user.username }}" 
-                     class="user-avatar">
-                <div class="user-info">
-                    <span class="username">{{ checkin.user.username }}</span>
-                    <small class="checkin-time">
-                        <i class="fas fa-clock"></i> {{ checkin.check_in_time|timesince }} ago
-                    </small>
+    {% if spot.active_count > 0 %}
+    <div class="checked-in-users">
+        <h4><i class="fas fa-users"></i> Currently Studying Here ({{ spot.active_count }})</h4>
+        <div class="users-grid">
+            {% for checkin in spot.active_users.all %}
+                {% if checkin.is_active %}
+                <div class="user-card">
+                    <img src="{% if checkin.user.userprofile.avatar_url %}{{ checkin.user.userprofile.avatar_url }}{% else %}{% static 'imgs/avatar_placeholder.jpg' %}{% endif %}" 
+                         alt="{{ checkin.user.username }}" 
+                         class="user-avatar">
+                    <div class="user-info">
+                        <span class="username">{{ checkin.user.username }}</span>
+                        <small class="checkin-time">
+                            <i class="fas fa-clock"></i> {{ checkin.check_in_time|timesince }} ago
+                        </small>
+                    </div>
                 </div>
-            </div>
-            {% endif %}
-        {% endfor %}
+                {% endif %}
+            {% endfor %}
+        </div>
     </div>
-</div>
-{% endif %}
-
-
-
-
-
-
-
-
-
-
+    {% endif %}
 
     <div class="review-form">
       <div class="panel-heading">
@@ -195,7 +304,6 @@
       </form>
     </div>
 
-
     <div class="review-list">
       <div class="panel-heading is-secondary">
         <span class="panel-icon" aria-hidden="true"><i class="fas fa-comments"></i></span>
@@ -229,6 +337,107 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
+      // =======================
+      // CAROUSEL FUNCTIONALITY
+      // =======================
+      const carousel = document.querySelector('.detail-image-carousel');
+      if (carousel) {
+        const images = carousel.querySelectorAll('.carousel-image');
+        const prevBtn = carousel.querySelector('.carousel-btn.prev');
+        const nextBtn = carousel.querySelector('.carousel-btn.next');
+        
+        if (images.length > 1) {
+          let currentIndex = 0;
+          let isAnimating = false;
+          const TRANSITION_MS = 350;
+
+          const ALL_CLASSES = [
+            'active',
+            'slide-in-right',
+            'slide-in-left',
+            'slide-from-right',
+            'slide-from-left',
+            'slide-out-left',
+            'slide-out-right'
+          ];
+
+          const resetClasses = (img) => {
+            ALL_CLASSES.forEach(cls => img.classList.remove(cls));
+          };
+
+          // Initialize - only first image active, all others hidden
+          images.forEach((img, idx) => {
+            resetClasses(img);
+            if (idx === 0) {
+              img.classList.add('active');
+            }
+          });
+
+          const goTo = (newIndex, direction) => {
+            if (isAnimating || newIndex === currentIndex || newIndex < 0 || newIndex >= images.length) return;
+            isAnimating = true;
+
+            const currentImg = images[currentIndex];
+            const nextImg = images[newIndex];
+
+            // Clear all classes first
+            resetClasses(currentImg);
+            resetClasses(nextImg);
+
+            if (direction === 'next') {
+              // Current image slides out to the left
+              currentImg.classList.add('active', 'slide-out-left');
+              // Next image starts from right
+              nextImg.classList.add('slide-in-right');
+              // Force reflow
+              void nextImg.offsetWidth;
+              // Next image slides in
+              nextImg.classList.add('active', 'slide-from-right');
+            } else {
+              // Current image slides out to the right
+              currentImg.classList.add('active', 'slide-out-right');
+              // Next image starts from left
+              nextImg.classList.add('slide-in-left');
+              // Force reflow
+              void nextImg.offsetWidth;
+              // Next image slides in
+              nextImg.classList.add('active', 'slide-from-left');
+            }
+
+            setTimeout(() => {
+              resetClasses(currentImg);
+              resetClasses(nextImg);
+              nextImg.classList.add('active');
+              currentIndex = newIndex;
+              isAnimating = false;
+            }, TRANSITION_MS);
+          };
+
+          if (prevBtn) {
+            prevBtn.addEventListener('click', (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const newIndex = (currentIndex - 1 + images.length) % images.length;
+              goTo(newIndex, 'prev');
+            });
+          }
+
+          if (nextBtn) {
+            nextBtn.addEventListener('click', (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const newIndex = (currentIndex + 1) % images.length;
+              goTo(newIndex, 'next');
+            });
+          }
+
+          console.log('Carousel initialized with', images.length, 'images');
+        }
+      }
+
+      // =======================
+      // STAR RATING FUNCTIONALITY
+      // =======================
       const starWidgets = document.querySelectorAll('.star-rating-widget');
 
       const setStars = (stars, activeValue) => {
