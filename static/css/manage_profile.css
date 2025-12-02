@@ -345,11 +345,19 @@ body {
 }
 
 .avatar-actions {
-  display: inline-block;
-  flex-direction: column;
+  display: flex;           
+  flex-direction: row;      
   gap: 12px;
-  align-items: flex-start;
-  justify-content: center;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;    
+}
+
+.avatar-actions .upload-button,
+.avatar-actions .btn-reset,
+.avatar-actions .btn-remove {
+  width: auto;              
+  justify-content: flex-start;
 }
 
 .upload-button,
@@ -473,6 +481,8 @@ body {
   text-align: center;
   font-weight: 700;
   letter-spacing: 1px;
+  width: 70px;          
+  align-self: flex-start;
 }
 
 /* Form Groups */
