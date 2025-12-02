@@ -20,9 +20,29 @@
   <link rel="stylesheet" href="{% static 'css/edit_listing.css' %}">
 </head>
 
+
 <body>
   <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Image Delete Confirm Modal -->
+<div id="imageDeleteModal" class="confirm-modal">
+  <div class="confirm-overlay"></div>
+  <div class="confirm-content">
+    <h3 class="confirm-title">Remove Image?</h3>
+    <p class="confirm-text" id="confirmImageText">
+      Are you sure you want to remove this image?
+    </p>
+    <div class="confirm-actions">
+      <button type="button" class="confirm-btn cancel" id="confirmCancelBtn">
+        Cancel
+      </button>
+      <button type="button" class="confirm-btn delete" id="confirmDeleteBtn">
+        Remove
+      </button>
+    </div>
+  </div>
+</div>
 
   <div class="create-page">
 
@@ -225,50 +245,86 @@
           </div>
         </div>
 
-        <!-- Images Upload -->
-        <div class="form-group images-group">
-          <label for="image-upload" class="section-label">
-            <i class="fas fa-images"></i> 
-            <span>Photos</span>
-          </label>
-          <p class="section-description">Upload multiple images to showcase the space</p>
-          
-          <!-- Current Images Display -->
-          {% if spot.image_url %}
-          <div class="current-images-section">
-            <h4 class="current-images-title">
-              <i class="fas fa-image"></i> Current Images
-            </h4>
-            <div class="current-images-grid">
-              <div class="current-image-item">
-                <img src="{{ spot.image_url }}" alt="{{ spot.name }}">
-                <div class="current-image-overlay">
-                  <span>Current Image</span>
-                </div>
-              </div>
-            </div>
+<!-- Images Upload -->
+<div class="form-group images-group">
+  <label for="image-upload" class="section-label">
+    <i class="fas fa-images"></i> 
+    <span>Photos</span>
+  </label>
+  <p class="section-description">Upload multiple images to showcase the space</p>
+  
+  <!-- Current Images Display (supports multiple) -->
+  {% if spot.images or spot.image_url %}
+  <div class="current-images-section">
+    <h4 class="current-images-title">
+      <i class="fas fa-image"></i> Current Images
+    </h4>
+    <div class="current-images-grid" id="currentImagesGrid">
+      {% if spot.images %}
+        {% for img in spot.images %}
+        <div class="current-image-item" data-url="{{ img }}">
+          <img src="{{ img }}" alt="{{ spot.name }} image {{ forloop.counter }}">
+          <button 
+            type="button" 
+            class="current-image-remove" 
+            data-url="{{ img }}"
+            aria-label="Remove image {{ forloop.counter }}"
+          >
+            &times;
+          </button>
+          <div class="current-image-overlay">
+            <span>Image {{ forloop.counter }}</span>
           </div>
-          {% endif %}
-          
-          <label for="image-upload" class="file-upload-label">
-            <div class="upload-icon">
-              <i class="fas fa-cloud-upload-alt"></i>
-            </div>
-            <div class="upload-text">
-              <span class="upload-title">Click to upload new images</span>
-              <span class="upload-subtitle">or drag and drop</span>
-            </div>
-            <span class="upload-note">PNG, JPG up to 10MB</span>
-          </label>
-          
-          <input type="file" id="image-upload" name="images" accept="image/*" multiple>
-          <!-- first / main image url -->
-          <input type="hidden" name="image_url" id="image_url" value="{{ spot.image_url }}">
-          <!-- NEW: JSON list for StudySpot.images so My Listings sees updates -->
-          <input type="hidden" name="images_json" id="images_json">
-
-          <div id="image-preview-container" class="image-preview-grid"></div>
         </div>
+        {% endfor %}
+      {% elif spot.image_url %}
+        <!-- Fallback for old data with single image only -->
+        <div class="current-image-item" data-url="{{ spot.image_url }}">
+          <img src="{{ spot.image_url }}" alt="{{ spot.name }}">
+          <button 
+            type="button" 
+            class="current-image-remove" 
+            data-url="{{ spot.image_url }}"
+            aria-label="Remove current image"
+          >
+            &times;
+          </button>
+          <div class="current-image-overlay">
+            <span>Current Image</span>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+  
+  <label for="image-upload" class="file-upload-label">
+    <div class="upload-icon">
+      <i class="fas fa-cloud-upload-alt"></i>
+    </div>
+    <div class="upload-text">
+      <span class="upload-title">Click to upload new images</span>
+      <span class="upload-subtitle">or drag and drop</span>
+    </div>
+    <span class="upload-note">PNG, JPG up to 10MB</span>
+  </label>
+  
+  <input type="file" id="image-upload" name="images" accept="image/*" multiple>
+
+  <!-- First / main image -->
+  <input type="hidden" name="image_url" id="image_url" value="{{ spot.image_url }}">
+
+  <!-- FULL LIST of images (existing + new) as JSON -->
+  <input 
+    type="hidden" 
+    name="images_json" 
+    id="images_json" 
+    value='{{ spot.images|default:"[]"|escape }}'
+  >
+
+  <div id="image-preview-container" class="image-preview-grid"></div>
+</div>
+
 
         <!-- Action Buttons -->
         <div class="form-actions">

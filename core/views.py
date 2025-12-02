@@ -473,34 +473,39 @@ def edit_listing(request, spot_id):
         lat = request.POST.get("lat")
         lng = request.POST.get("lng")
 
-        # Check if lat is valid (not None, not "None", not empty)
-        if lat and lat not in ['None', 'null', 'undefined', '']:
+        if lat and lat not in ["None", "null", "undefined", ""]:
             try:
                 spot.lat = float(lat)
             except (ValueError, TypeError):
-                pass # If it's not a number, ignore it
+                pass
 
-        # Check if lng is valid
-        if lng and lng not in ['None', 'null', 'undefined', '']:
+        if lng and lng not in ["None", "null", "undefined", ""]:
             try:
                 spot.lng = float(lng)
             except (ValueError, TypeError):
-                pass # If it's not a number, ignore it
+                pass
 
-        # ---------- IMAGES (MULTIPLE, JUST LIKE create_listing) ----------
-        # input name="images" with multiple
-        images_uploaded = request.FILES.getlist("images")
+        # ---------- IMAGES (MERGE CURRENT + NEW VIA images_json) ----------
+        raw_images = request.POST.get("images_json", "").strip()
 
-        if images_uploaded:
-            uploaded_urls = []
-            for img in images_uploaded:
-                public_url = upload_studyspot_image(img, spot.id)
-                if public_url:
-                    uploaded_urls.append(public_url)
+        if raw_images:
+            try:
+                image_list = json.loads(raw_images)
+                if not isinstance(image_list, list):
+                    image_list = []
+            except json.JSONDecodeError:
+                image_list = []
+        else:
+            # if no JSON came back, keep existing images
+            image_list = spot.images or []
 
-            if uploaded_urls:
-                spot.images = uploaded_urls
-                spot.image_url = uploaded_urls[0]
+        # final list now reflects: (current - removed) + newly uploaded
+        spot.images = image_list
+        if image_list:
+            spot.image_url = image_list[0]
+        else:
+            # optional: clear main image if no images left
+            spot.image_url = ""
 
         spot.save()
         messages.success(request, "Listing updated successfully.")
@@ -509,8 +514,15 @@ def edit_listing(request, spot_id):
     return render(
         request,
         "edit_listing.html",
-        {"spot": spot, "profile": profile},
+        {
+            "spot": spot,
+            "profile": profile,
+            "SUPABASE_URL": SUPABASE_URL,
+            "SUPABASE_KEY": SUPABASE_KEY,
+        },
     )
+
+
 
 
 # ---------- Delete Listing ----------
