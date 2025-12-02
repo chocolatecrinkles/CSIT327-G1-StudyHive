@@ -102,11 +102,23 @@
         </div>
 
         <div class="detail-item">
-          <label><i class="fas fa-check-circle"></i> Account Status</label>
-          <div class="detail-value">
-            <span class="status-badge active"><i class="fas fa-circle"></i> Active</span>
-          </div>
+  <label><i class="fas fa-check-circle"></i> Account Status</label>
+        <div class="detail-value">
+          <span class="status-badge active">
+            <i class="fas fa-circle"></i> Active
+          </span>
+
+          {% if user.userprofile.is_contributor %}
+            <span class="status-badge contributor">
+              <i class="fas fa-star"></i> Contributor
+            </span>
+          {% else %}
+            <span class="status-badge regular">
+              <i class="fas fa-user"></i> Regular
+            </span>
+          {% endif %}
         </div>
+      </div>
       </div>
     </div>
   </div>

@@ -312,26 +312,30 @@ body {
 
 /* Status Badge */
 .status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border-radius: 50px;
-  font-family: 'Nunito Sans', sans-serif;
-  font-size: 0.9rem;
-  font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
 }
 
 .status-badge.active {
-  background: rgba(169, 214, 167, 0.2);
-  color: #2E7D32;
-  border: 1px solid var(--focus-mint);
+    background: #e2f7e2;
+    color: #2b8a3e;
 }
 
-.status-badge i {
-  font-size: 0.6rem;
-  animation: pulse 2s infinite;
+.status-badge.contributor {
+    background: #fff3c4;
+    color: #b88900;
 }
+
+.status-badge.regular {
+    background: #e4e6eb;
+    color: #555;
+}
+
 
 @keyframes pulse {
   0%, 100% {
