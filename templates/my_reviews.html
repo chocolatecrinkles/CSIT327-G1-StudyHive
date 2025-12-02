@@ -4,102 +4,265 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>StudyHive | My Reviews</title>
+  <title>My Reviews | StudyHive</title>
 
-  <!-- Google Fonts -->
+  <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-  
-  <!-- Font Awesome -->
+
+  <!-- Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-  <!-- Page CSS: base + page-specific overrides -->
-  <link rel="stylesheet" href="{% static 'css/my_listings.css' %}">
+  <!-- Page CSS -->
   <link rel="stylesheet" href="{% static 'css/my_reviews.css' %}">
 </head>
 
 <body>
-  <!-- Header bar (matches My Listings layout) -->
-  <header class="header-bar">
-    <a href="{% url 'core:map_view' %}" class="logo">
-      <i class="fas fa-book-reader logo-icon"></i>
-      <span class="brand-study">Study</span><span class="brand-hive">Hive</span>
-    </a>
-    <a href="{% url 'core:map_view' %}" class="back-button">
-      <i class="fas fa-arrow-left"></i>
-      <span>Back to Home</span>
-    </a>
-  </header>
+  <!-- NAVBAR - Matching My Listings -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="{% url 'core:home' %}" class="nav-brand">
+        <img src="{% static 'imgs/Studyhive_Logo.png' %}" alt="StudyHive Logo" class="nav-logo">
+        <span class="brand-study">Study</span><span class="brand-hive">Hive</span>
+      </a>
 
-  <div class="page-header">
-    <div class="header-icon">
-      <i class="fas fa-star"></i>
-    </div>
-    <h1 class="page-title">My Reviews</h1>
-    <p class="page-subtitle">Manage and review your shared experiences</p>
-  </div>
+      <ul class="nav-menu">
+        <li><a href="{% url 'core:map_view' %}" class="nav-link">Map</a></li>
+        {% if user.userprofile.is_contributor %}
+          <li><a href="{% url 'core:my_listings' %}" class="nav-link">My Spots</a></li>
+        {% else %}
+          <li><a href="{% url 'core:apply_staff' %}" class="nav-link">Become Contributor</a></li>
+        {% endif %}
+        <li><a href="{% url 'core:about' %}" class="nav-link">About</a></li>
+      </ul>
 
-  <!-- Reviews Section -->
-  <main class="main-container">
-    <div class="reviews-container">
-      <div class="reviews-header">
-        <h1><i class="fas fa-star"></i> My Reviews</h1>
-        <p class="reviews-count">You have written <strong>{{ total_reviews }}</strong> review{{ total_reviews|pluralize }}</p>
+      <div class="nav-right">
+        <div class="user-dropdown">
+          <button class="user-avatar" id="dropdownBtn">
+            {% if user.userprofile.avatar_url %}
+              <img src="{{ user.userprofile.avatar_url }}" alt="Profile">
+            {% else %}
+              <img src="{% static 'imgs/avatar_placeholder.jpg' %}" alt="Profile">
+            {% endif %}
+          </button>
+
+          <div class="dropdown-menu" id="userDropdown">
+            <div class="dropdown-user">
+              <img src="{% if user.userprofile.avatar_url %}{{ user.userprofile.avatar_url }}{% else %}{% static 'imgs/avatar_placeholder.jpg' %}{% endif %}" alt="">
+              <div>
+                <strong>{{ user.first_name }} {{ user.last_name }}</strong><br>
+                <small>{{ user.email }}</small>
+              </div>
+            </div>
+            <div class="dropdown-divider"></div>
+
+            {% if user.userprofile.is_contributor %}
+              <a href="{% url 'core:profile' %}">👤 My Profile</a>
+              <a href="{% url 'core:my_listings' %}">📍 My Listings</a>
+              <a href="{% url 'core:my_reviews' %}">⭐ My Reviews</a>
+              <a href="{% url 'core:create_listing' %}">➕ Create Listing</a>
+              <a href="#">⚙️ Settings</a>
+            {% else %}
+              <a href="{% url 'core:profile' %}">👤 My Profile</a>
+              <a href="{% url 'core:my_reviews' %}">⭐ My Reviews</a>
+              <a href="{% url 'core:apply_staff' %}">💼 Become a Contributor</a>
+              <a href="#">⚙️ Settings</a>
+            {% endif %}
+
+            <div class="dropdown-divider"></div>
+            <a href="{% url 'core:logout' %}" class="logout-link" id="logoutLink">🚪 Logout</a>
+          </div>
+        </div>
       </div>
+    </div>
+  </nav>
 
+  <!-- HERO SECTION - Matching My Listings -->
+  <section class="hero-section">
+    <div class="hero-content">
+      <h1>My Reviews</h1>
+      <p>Track your experiences and ratings</p>
+    </div>
+  </section>
+
+  <!-- CONTENT SECTION - Matching My Listings Structure -->
+  <div class="content-section">
+    <div class="container">
+      
       {% if reviews %}
-        <div class="reviews-list">
+        <!-- Stats Summary -->
+        <div class="stats-section">
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-number">{{ total_reviews }}</div>
+              <div class="stat-label">Total Reviews</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number">{{ reviews|length }}</div>
+              <div class="stat-label">Study Spots Reviewed</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reviews Grid -->
+        <div class="reviews-grid">
           {% for review in reviews %}
-            <div class="review-card">
+            <article class="review-card">
+              <!-- SPOT INFO HEADER -->
               <div class="review-header">
                 <div class="review-spot-info">
-                  <h3><a href="{% url 'core:studyspot_detail' review.spot.id %}">{{ review.spot.name }}</a></h3>
+                  <h3 class="review-spot-name">
+                    <a href="{% url 'core:studyspot_detail' review.spot.id %}">
+                      {{ review.spot.name }}
+                    </a>
+                  </h3>
                   <div class="review-spot-location">
                     <i class="fas fa-map-marker-alt"></i>
                     <span>{{ review.spot.location }}</span>
                   </div>
                 </div>
-                <div class="review-rating">
-                  <span class="rating-value">{{ review.rating }}/5</span>
-                  <div class="rating-stars">
-                    {% for i in "12345" %}
-                      {% if i|add:0 <= review.rating %}
-                        <i class="fas fa-star"></i>
-                      {% else %}
-                        <i class="far fa-star"></i>
-                      {% endif %}
-                    {% endfor %}
+
+                <!-- RATING DISPLAY -->
+                <div class="review-rating-display">
+                  <div class="rating-badge">
+                    <span class="rating-number">{{ review.rating }}</span>
+                    <i class="fas fa-star"></i>
                   </div>
                 </div>
               </div>
 
+              <!-- RATING STARS -->
+              <div class="review-stars">
+                {% for i in "12345" %}
+                  {% if forloop.counter <= review.rating %}
+                    <i class="fas fa-star star-filled"></i>
+                  {% else %}
+                    <i class="far fa-star star-empty"></i>
+                  {% endif %}
+                {% endfor %}
+              </div>
+
+              <!-- REVIEW COMMENT -->
               {% if review.comment %}
                 <div class="review-comment">
-                  {{ review.comment }}
+                  <i class="fas fa-quote-left quote-icon"></i>
+                  <p>{{ review.comment }}</p>
+                </div>
+              {% else %}
+                <div class="review-no-comment">
+                  <i class="fas fa-info-circle"></i>
+                  <span>No written review provided</span>
                 </div>
               {% endif %}
 
-              <div style="text-align: right; color: #808080; font-size: 0.85rem;">
-                <i class="fas fa-calendar"></i> 
-                {{ review.created_at|date:"M d, Y \a\t H:i" }}
+              <!-- REVIEW DATE -->
+              <div class="review-date">
+                <i class="fas fa-calendar-alt"></i>
+                <span>{{ review.created_at|date:"F d, Y" }}</span>
               </div>
 
+              <!-- ACTION BUTTONS -->
               <div class="review-actions">
-                <a href="{% url 'core:studyspot_detail' review.spot.id %}" class="review-btn review-btn-edit">
-                  <i class="fas fa-arrow-right"></i> View Spot
+                <a href="{% url 'core:studyspot_detail' review.spot.id %}" class="btn-view">
+                  <i class="fas fa-eye"></i>
+                  <span>View Spot</span>
                 </a>
+                <button type="button" class="btn-delete-review" 
+                        data-review-id="{{ review.id }}" 
+                        data-spot-name="{{ review.spot.name|escapejs }}">
+                  <i class="fas fa-trash"></i>
+                  <span>Delete</span>
+                </button>
               </div>
-            </div>
+            </article>
           {% endfor %}
         </div>
+
       {% else %}
+        <!-- EMPTY STATE -->
         <div class="empty-state">
-          <i class="fas fa-star"></i>
-          <h3>No Reviews Yet</h3>
-          <p>You haven't written any reviews. Start by visiting a study spot and sharing your experience!</p>
-          <a href="{% url 'core:map_view' %}"><i class="fas fa-arrow-right"></i> Find Study Spots</a>
+          <div class="empty-icon">
+            <i class="fas fa-star-half-alt"></i>
+          </div>
+          <h2 class="empty-title">No Reviews Yet</h2>
+          <p class="empty-text">You haven't written any reviews yet. Start exploring study spots and share your experiences!</p>
+          <a href="{% url 'core:map_view' %}" class="btn-create">
+            <i class="fas fa-map-marked-alt"></i>
+            <span>Explore Study Spots</span>
+          </a>
         </div>
       {% endif %}
-    </div>
-  </main>
 
+    </div>
+  </div>
+
+  <!-- FOOTER - Matching My Listings -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="social-links">
+        <a href="#" class="social-link" aria-label="Visit StudyHive on Twitter">
+          <i class="fab fa-twitter"></i>
+        </a>
+        <a href="#" class="social-link" aria-label="Visit StudyHive on Facebook">
+          <i class="fab fa-facebook"></i>
+        </a>
+        <a href="#" class="social-link" aria-label="Visit StudyHive on Instagram">
+          <i class="fab fa-instagram"></i>
+        </a>
+        <a href="#" class="social-link" aria-label="Visit StudyHive on LinkedIn">
+          <i class="fab fa-linkedin"></i>
+        </a>
+      </div>
+
+      <p class="footer-text">
+        © 2025 StudyHive. Helping CIT-U students discover the best study spaces in Cebu City. 🐝
+      </p>
+    </div>
+  </footer>
+
+  <!-- Logout Modal -->
+  <div id="logoutModal" class="modal-overlay">
+    <div class="modal-box">
+      <h2>Log Out</h2>
+      <p>Are you sure you want to log out of StudyHive?</p>
+      
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" id="cancelLogout">
+          <i class="fas fa-times"></i>
+          <span>Cancel</span>
+        </button>
+        <button type="button" class="btn-confirm-delete" id="confirmLogout">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Log Out</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Review Modal -->
+  <div id="deleteReviewModal" class="modal-overlay">
+    <div class="modal-box">
+      <h2>Delete Review?</h2>
+      <p>Are you sure you want to delete your review for <strong id="reviewSpotName"></strong>?</p>
+      <p class="modal-warning">This action cannot be undone.</p>
+      
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" id="cancelDeleteReview">
+          <i class="fas fa-times"></i>
+          <span>Cancel</span>
+        </button>
+        <form method="post" id="deleteReviewForm" style="display: inline;">
+          {% csrf_token %}
+          <button type="submit" class="btn-confirm-delete">
+            <i class="fas fa-trash"></i>
+            <span>Delete Review</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- JS -->
+  <script src="{% static 'js/my_reviews.js' %}"></script>
+
+</body>
 </html>
