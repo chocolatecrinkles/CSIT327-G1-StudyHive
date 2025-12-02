@@ -62,7 +62,7 @@
             <strong>{{ study_spaces.count }}</strong>
             <span>Study Locations</span>
           </div>
-          <div class="stat-item">
+          <div class="stat-item hour">
             <strong>24/7</strong>
             <span>Available Access</span>
           </div>
@@ -208,23 +208,56 @@
              data-pastries="{% if spot.pastries %}true{% else %}false{% endif %}"
              data-open24="{% if spot.open_24_7 %}true{% else %}false{% endif %}"
              data-trending="{% if spot.is_trending %}true{% else %}false{% endif %}">
-          <div class="card-img-wrap" style="position: relative;">
-            {% if spot.image_url %}
-              <img src="{{ spot.image_url }}" alt="{{ spot.name }}">
-            {% else %}
-              <img src="{% static 'imgs/placeholder.png' %}" alt="Placeholder">
-            {% endif %}
 
-            <div class="card-badge">
-              <i class="fas fa-star"></i> {{ spot.average_rating|floatformat:1 }}
-            </div>
+          {% if spot.images %}
+            <div class="card-img-wrap has-carousel">
+              <div class="card-carousel">
+                {% for img in spot.images %}
+                  <div class="card-slide{% if forloop.first %} active{% endif %}">
+                    <img src="{{ img }}" alt="{{ spot.name }} image {{ forloop.counter }}">
+                  </div>
+                {% endfor %}
 
-            {% if spot.is_trending %}
-            <div class="trending-badge">
-              <i class="fas fa-fire"></i> Trending
+                {# Only show arrows if there are 2 or more images #}
+                {% if spot.images|length > 1 %}
+                  <button type="button" class="card-nav prev" aria-label="Previous image">
+                    &#10094;
+                  </button>
+                  <button type="button" class="card-nav next" aria-label="Next image">
+                    &#10095;
+                  </button>
+                {% endif %}
+              </div>
+
+              <div class="card-badge">
+                <i class="fas fa-star"></i> {{ spot.average_rating|floatformat:1 }}
+              </div>
+
+              {% if spot.is_trending %}
+                <div class="trending-badge">
+                  <i class="fas fa-fire"></i> Trending
+                </div>
+              {% endif %}
             </div>
-            {% endif %}
-          </div>
+          {% else %}
+            <div class="card-img-wrap">
+              {% if spot.image_url %}
+                <img src="{{ spot.image_url }}" alt="{{ spot.name }}">
+              {% else %}
+                <img src="{% static 'imgs/placeholder.png' %}" alt="Placeholder">
+              {% endif %}
+
+              <div class="card-badge">
+                <i class="fas fa-star"></i> {{ spot.average_rating|floatformat:1 }}
+              </div>
+
+              {% if spot.is_trending %}
+                <div class="trending-badge">
+                  <i class="fas fa-fire"></i> Trending
+                </div>
+              {% endif %}
+            </div>
+          {% endif %}
 
           <div class="card-info">
             <h3>{{ spot.name }}</h3>

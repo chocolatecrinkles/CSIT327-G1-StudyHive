@@ -116,14 +116,18 @@ def upload_studyspot_image(image_file, spot_id):
 # ---------- AUTH / ACCOUNT VIEWS ----------
 
 def landing_view(request):
+    # If already logged in, send them to the main app
     if request.user.is_authenticated:
         return redirect("core:home")
+
     query = request.GET.get("q", "").strip()
     filter_by = request.GET.get("filter", "all")
+    sort_by = request.GET.get("sort", "default")
 
+    # Base queryset
     study_spaces = StudySpot.objects.all()
 
-    # Search
+    # ----- SEARCH -----
     if query:
         study_spaces = study_spaces.filter(
             Q(name__icontains=query)
@@ -131,7 +135,7 @@ def landing_view(request):
             | Q(description__icontains=query)
         )
 
-    # Filters
+    # ----- FILTERS (URL-based, optional) -----
     if filter_by == "wifi":
         study_spaces = study_spaces.filter(wifi=True)
     elif filter_by == "ac":
@@ -147,12 +151,26 @@ def landing_view(request):
     elif filter_by == "trending":
         study_spaces = study_spaces.filter(is_trending=True)
 
+    # ----- OPTIONAL INITIAL SORT (for first load) -----
+    if sort_by == "rating":
+        study_spaces = study_spaces.order_by("-average_rating", "name")
+    elif sort_by == "name":
+        study_spaces = study_spaces.order_by("name")
+    elif sort_by == "popular":
+        study_spaces = study_spaces.order_by("-is_trending", "-average_rating", "name")
+    else:
+        # Default: trending first, then rating, then name
+        study_spaces = study_spaces.order_by("-is_trending", "-average_rating", "name")
+
     context = {
         "study_spaces": study_spaces,
         "query": query,
         "filter_by": filter_by,
+        "sort_by": sort_by,
     }
     return render(request, "landing.html", context)
+
+    
 
 def login_view(request):
     if request.user.is_authenticated:
