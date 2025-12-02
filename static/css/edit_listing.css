@@ -432,6 +432,7 @@ textarea {
 }
 
 .current-image-overlay {
+  pointer-events: none;
   position: absolute;
   inset: 0;
   background: linear-gradient(to top, rgba(69, 90, 100, 0.8), transparent);
@@ -442,6 +443,7 @@ textarea {
   color: #fff;
   font-size: 12px;
   font-weight: 600;
+  z-index: 1;
 }
 
 .file-upload-label {
@@ -707,6 +709,7 @@ input[type="file"] {
   position: absolute;
   left: 14px;
   top: 50%;
+  right:50px;
   transform: translateY(-50%);
   font-size: 0.9rem;
   color: var(--green-main);
@@ -943,6 +946,151 @@ input[type="file"] {
   font-size: 0.85rem;
   color: #d93a3a;
   font-weight: 600;
+}
+
+.current-image-item .current-image-remove {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(217, 58, 58, 0.9);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  z-index: 2;
+}
+
+.current-image-item .current-image-remove:hover {
+  background: rgb(200, 40, 40);
+  transform: scale(1.1);
+}
+
+/* ===== CURRENT IMAGE CLOSE BUTTON (ON TOP OF OVERLAY) ===== */
+.current-image-item {
+  position: relative;
+}
+
+.current-image-overlay {
+  pointer-events: none;
+  z-index: 1;
+}
+
+.current-image-item .current-image-remove {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(217, 58, 58, 0.9);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  z-index: 2;
+}
+
+.current-image-item .current-image-remove:hover {
+  background: rgb(200, 40, 40);
+  transform: scale(1.1);
+}
+
+/* ===== CONFIRM MODAL (THEMED) ===== */
+.confirm-modal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  z-index: 1500;
+}
+
+.confirm-modal.show {
+  display: block;
+}
+
+.confirm-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(3px);
+}
+
+.confirm-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(400px, 90vw);
+  background: var(--white);
+  border-radius: 18px;
+  box-shadow: var(--shadow-lg);
+  padding: 1.75rem 1.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.confirm-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--dark);
+}
+
+.confirm-text {
+  font-size: 0.95rem;
+  color: var(--dark);
+  opacity: 0.85;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.confirm-btn {
+  min-width: 100px;
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Nunito Sans', sans-serif;
+}
+
+.confirm-btn.cancel {
+  background: var(--white);
+  color: var(--dark);
+  border-color: var(--gray);
+}
+
+.confirm-btn.cancel:hover {
+  background: var(--gray-light);
+}
+
+.confirm-btn.delete {
+  background: var(--green-main);
+  color: var(--white);
+  box-shadow: var(--shadow-sm);
+}
+
+.confirm-btn.delete:hover {
+  background: var(--green-light);
+  color: var(--dark);
 }
 
 

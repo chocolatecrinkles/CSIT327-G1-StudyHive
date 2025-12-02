@@ -30,10 +30,22 @@ document.addEventListener("DOMContentLoaded", () => {
   const form = document.querySelector(".listing-form");
   const submitBtn = form ? form.querySelector(".submit-btn") : null;
 
-  // image fields (also used below for Supabase upload)
+  // image-related elements
   const imageUpload = document.getElementById("image-upload");
   const imagesJsonField = document.getElementById("images_json");
   const imageUrlField = document.getElementById("image_url");
+  const currentImagesGrid = document.getElementById("currentImagesGrid");
+  const previewContainer = document.getElementById("image-preview-container");
+  const dropZone = document.querySelector(".file-upload-label");
+
+  // delete-confirm modal
+  const deleteModal = document.getElementById("imageDeleteModal");
+  const deleteOverlay = deleteModal
+    ? deleteModal.querySelector(".confirm-overlay")
+    : null;
+  const deleteCancelBtn = document.getElementById("confirmCancelBtn");
+  const deleteConfirmBtn = document.getElementById("confirmDeleteBtn");
+  const confirmImageText = document.getElementById("confirmImageText");
 
   let selectedAddress = "";
   let mapPicker = null;
@@ -43,6 +55,29 @@ document.addEventListener("DOMContentLoaded", () => {
   // Get existing location data
   const existingLat = latField ? latField.value : "";
   const existingLng = lngField ? lngField.value : "";
+
+  /* ============================================================
+       EXISTING IMAGES (BUILD FROM DOM TO ENSURE MERGE)
+  ============================================================ */
+  let existingImages = [];
+
+  if (currentImagesGrid) {
+    existingImages = Array.from(
+      currentImagesGrid.querySelectorAll(".current-image-item")
+    )
+      .map((item) => item.dataset.url)
+      .filter(Boolean);
+  }
+
+  // Fallback: if still empty, use image_url (older data)
+  if ((!existingImages || !existingImages.length) && imageUrlField && imageUrlField.value) {
+    existingImages = [imageUrlField.value];
+  }
+
+  // Sync hidden JSON with what we see in the UI
+  if (imagesJsonField) {
+    imagesJsonField.value = JSON.stringify(existingImages);
+  }
 
   /* ============================================================
        ADDRESS CLEAN FORMAT
@@ -105,8 +140,15 @@ document.addEventListener("DOMContentLoaded", () => {
             const lng = e.latlng.lng;
 
             updateMarker(lat, lng);
-            if (latField) latField.value = lat;
-            if (lngField) lngField.value = lng;
+
+            if (latField) {
+              latField.value = lat;
+              latField.dispatchEvent(new Event("input", { bubbles: true }));
+            }
+            if (lngField) {
+              lngField.value = lng;
+              lngField.dispatchEvent(new Event("input", { bubbles: true }));
+            }
 
             try {
               const res = await fetch(
@@ -125,6 +167,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
               if (!hasSavedBefore && locationField && !locationField.value) {
                 locationField.value = formatted;
+                locationField.dispatchEvent(new Event("input", { bubbles: true }));
               }
             } catch (err) {
               console.error("Reverse geocoding error:", err);
@@ -138,6 +181,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
               if (!hasSavedBefore && locationField && !locationField.value) {
                 locationField.value = fallback;
+                locationField.dispatchEvent(new Event("input", { bubbles: true }));
               }
             }
           });
@@ -174,7 +218,10 @@ document.addEventListener("DOMContentLoaded", () => {
   ============================================================ */
   if (saveMapBtn && mapModal) {
     saveMapBtn.addEventListener("click", () => {
-      if (selectedAddress && locationField) locationField.value = selectedAddress;
+      if (selectedAddress && locationField) {
+        locationField.value = selectedAddress;
+        locationField.dispatchEvent(new Event("input", { bubbles: true }));
+      }
       hasSavedBefore = true;
       mapModal.style.display = "none";
       if (mapSearchResults) mapSearchResults.style.display = "none";
@@ -260,11 +307,18 @@ document.addEventListener("DOMContentLoaded", () => {
             selectedAddress = formatted;
             if (mapTitle) mapTitle.textContent = formatted;
 
-            if (latField) latField.value = lat;
-            if (lngField) lngField.value = lng;
+            if (latField) {
+              latField.value = lat;
+              latField.dispatchEvent(new Event("input", { bubbles: true }));
+            }
+            if (lngField) {
+              lngField.value = lng;
+              lngField.dispatchEvent(new Event("input", { bubbles: true }));
+            }
 
             if (!hasSavedBefore && locationField && !locationField.value) {
               locationField.value = formatted;
+              locationField.dispatchEvent(new Event("input", { bubbles: true }));
             }
 
             mapSearchResults.style.display = "none";
@@ -349,6 +403,89 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   /* ============================================================
+       IMAGE DELETE CONFIRM MODAL LOGIC
+  ============================================================ */
+  let pendingDeleteUrl = null;
+  let pendingDeleteElement = null;
+
+  function openDeleteModal(url, element) {
+    pendingDeleteUrl = url;
+    pendingDeleteElement = element;
+
+    if (confirmImageText) {
+      const shortUrl = url.length > 50 ? "..." + url.slice(-50) : url;
+      confirmImageText.textContent = `Are you sure you want to remove this image?\n${shortUrl}`;
+    }
+
+    if (deleteModal) {
+      deleteModal.classList.add("show");
+    }
+  }
+
+  function closeDeleteModal() {
+    pendingDeleteUrl = null;
+    pendingDeleteElement = null;
+    if (deleteModal) {
+      deleteModal.classList.remove("show");
+    }
+  }
+
+  if (currentImagesGrid) {
+    currentImagesGrid.addEventListener("click", (e) => {
+      const btn = e.target.closest(".current-image-remove");
+      if (!btn) return;
+
+      const url = btn.dataset.url;
+      const item = btn.closest(".current-image-item");
+      if (!url || !item) return;
+
+      openDeleteModal(url, item);
+    });
+  }
+
+  if (deleteCancelBtn) {
+    deleteCancelBtn.addEventListener("click", () => {
+      closeDeleteModal();
+    });
+  }
+
+  if (deleteOverlay) {
+    deleteOverlay.addEventListener("click", () => {
+      closeDeleteModal();
+    });
+  }
+
+  if (deleteConfirmBtn) {
+    deleteConfirmBtn.addEventListener("click", () => {
+      if (!pendingDeleteUrl) {
+        closeDeleteModal();
+        return;
+      }
+
+      // Remove from array
+      existingImages = existingImages.filter((u) => u !== pendingDeleteUrl);
+
+      // Update hidden JSON field
+      if (imagesJsonField) {
+        imagesJsonField.value = JSON.stringify(existingImages);
+        imagesJsonField.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+
+      // Adjust main image if needed
+      if (imageUrlField && imageUrlField.value === pendingDeleteUrl) {
+        imageUrlField.value = existingImages[0] || "";
+      }
+
+      // Remove from DOM
+      if (pendingDeleteElement) {
+        pendingDeleteElement.remove();
+      }
+
+      closeDeleteModal();
+    });
+  }
+
+  /* ============================================================
        FORM DIRTY CHECK
   ============================================================ */
   function formDataToString(fd) {
@@ -392,6 +529,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     /* ============================================================
          SUPABASE UPLOAD ON SUBMIT (ONLY IF NEW IMAGES)
+         MERGE existing + new → images_json
     ============================================================ */
     form.addEventListener("submit", async (e) => {
       // if previous handler already blocked submit, stop here
@@ -445,13 +583,17 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         }
 
-        if (uploadedUrls.length) {
-          if (imagesJsonField) {
-            imagesJsonField.value = JSON.stringify(uploadedUrls);
-          }
-          if (imageUrlField) {
-            imageUrlField.value = uploadedUrls[0];
-          }
+        // MERGE existing + new images (dedup)
+        const allImages = Array.from(new Set([...existingImages, ...uploadedUrls]));
+        existingImages = allImages;
+
+        if (imagesJsonField) {
+          imagesJsonField.value = JSON.stringify(allImages);
+          imagesJsonField.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+
+        if (imageUrlField && allImages.length) {
+          imageUrlField.value = allImages[0];
         }
       } catch (err) {
         console.error("Image upload failed:", err);
@@ -461,96 +603,91 @@ document.addEventListener("DOMContentLoaded", () => {
       form.submit();
     });
   }
+
+  /* ============================================================
+     IMAGE UPLOAD PREVIEW + DRAG & DROP
+  ============================================================ */
+  function updateFileList(newFiles) {
+    if (!imageUpload) return;
+    const dataTransfer = new DataTransfer();
+    newFiles.forEach((file) => dataTransfer.items.add(file));
+    imageUpload.files = dataTransfer.files;
+  }
+
+  function renderPreviews(files) {
+    if (!previewContainer) return;
+
+    previewContainer.innerHTML = "";
+    files.forEach((file, index) => {
+      if (!file.type.startsWith("image/")) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const previewBox = document.createElement("div");
+        previewBox.classList.add("image-preview-box");
+        previewBox.innerHTML = `
+          <img src="${e.target.result}" alt="Preview">
+          <button type="button" class="remove-preview" data-index="${index}">
+            &times;
+          </button>
+        `;
+        previewContainer.appendChild(previewBox);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  if (imageUpload) {
+    imageUpload.addEventListener("change", () => {
+      renderPreviews(Array.from(imageUpload.files));
+    });
+  }
+
+  if (previewContainer && imageUpload) {
+    previewContainer.addEventListener("click", (e) => {
+      const btn = e.target.closest(".remove-preview");
+      if (!btn) return;
+
+      const index = parseInt(btn.dataset.index, 10);
+      let files = Array.from(imageUpload.files);
+      files.splice(index, 1);
+
+      updateFileList(files);
+      renderPreviews(files);
+    });
+  }
+
+  if (dropZone && imageUpload && previewContainer) {
+    ["dragenter", "dragover"].forEach((eventName) => {
+      dropZone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = "var(--primary-green)";
+        dropZone.style.background = "rgba(144, 241, 156, 0.08)";
+      });
+    });
+
+    ["dragleave", "drop"].forEach((eventName) => {
+      dropZone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = "var(--glass-border)";
+        dropZone.style.background = "var(--input-bg)";
+      });
+    });
+
+    dropZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      const dropped = Array.from(e.dataTransfer.files);
+      const current = Array.from(imageUpload.files);
+      const combined = [...current];
+
+      dropped.forEach((file) => {
+        if (file.type.startsWith("image/") && file.size <= 10 * 1024 * 1024) {
+          combined.push(file);
+        }
+      });
+
+      updateFileList(combined);
+      renderPreviews(combined);
+    });
+  }
 });
-
-/* ============================================================
-   IMAGE UPLOAD PREVIEW + DRAG & DROP
-============================================================ */
-const imageUpload = document.getElementById("image-upload");
-const previewContainer = document.getElementById("image-preview-container");
-const dropZone = document.querySelector(".file-upload-label");
-const imagesJsonField = document.getElementById("images_json");
-
-function updateFileList(newFiles) {
-  if (!imageUpload) return;
-  const dataTransfer = new DataTransfer();
-  newFiles.forEach((file) => dataTransfer.items.add(file));
-  imageUpload.files = dataTransfer.files;
-}
-
-function renderPreviews(files) {
-  if (!previewContainer) return;
-
-  previewContainer.innerHTML = "";
-  files.forEach((file, index) => {
-    if (!file.type.startsWith("image/")) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const previewBox = document.createElement("div");
-      previewBox.classList.add("image-preview-box");
-      previewBox.innerHTML = `
-        <img src="${e.target.result}" alt="Preview">
-        <button type="button" class="remove-preview" data-index="${index}">
-          &times;
-        </button>
-      `;
-      previewContainer.appendChild(previewBox);
-    };
-    reader.readAsDataURL(file);
-  });
-}
-
-if (imageUpload) {
-  imageUpload.addEventListener("change", () => {
-    renderPreviews(Array.from(imageUpload.files));
-  });
-}
-
-if (previewContainer && imageUpload) {
-  previewContainer.addEventListener("click", (e) => {
-    const btn = e.target.closest(".remove-preview");
-    if (!btn) return;
-
-    const index = parseInt(btn.dataset.index, 10);
-    let files = Array.from(imageUpload.files);
-    files.splice(index, 1);
-
-    updateFileList(files);
-    renderPreviews(files);
-  });
-}
-
-if (dropZone && imageUpload && previewContainer) {
-  ["dragenter", "dragover"].forEach((eventName) => {
-    dropZone.addEventListener(eventName, (e) => {
-      e.preventDefault();
-      dropZone.style.borderColor = "var(--primary-green)";
-      dropZone.style.background = "rgba(144, 241, 156, 0.08)";
-    });
-  });
-
-  ["dragleave", "drop"].forEach((eventName) => {
-    dropZone.addEventListener(eventName, (e) => {
-      e.preventDefault();
-      dropZone.style.borderColor = "var(--glass-border)";
-      dropZone.style.background = "var(--input-bg)";
-    });
-  });
-
-  dropZone.addEventListener("drop", (e) => {
-    e.preventDefault();
-    const dropped = Array.from(e.dataTransfer.files);
-    const current = Array.from(imageUpload.files);
-    const combined = [...current];
-
-    dropped.forEach((file) => {
-      if (file.type.startsWith("image/") && file.size <= 10 * 1024 * 1024) {
-        combined.push(file);
-      }
-    });
-
-    updateFileList(combined);
-    renderPreviews(combined);
-  });
-}
