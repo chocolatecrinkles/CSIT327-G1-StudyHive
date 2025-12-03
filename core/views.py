@@ -13,6 +13,8 @@ from django.utils import timezone
 from datetime import time
 from .models import StudySpot, Review
 from .forms import ReviewForm
+from django.contrib.auth import authenticate, login
+
 
 
 #checkins import
@@ -202,7 +204,11 @@ def register_view(request):
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
+
+            raw_password = form.cleaned_data.get("password1")
+            user = authenticate(request, username=user.username, password=raw_password)
             login(request, user)
+
             messages.success(request, "Account created successfully!")
             return redirect("core:home")
         else:
@@ -589,48 +595,53 @@ def apply_staff(request):
 
     if request.method == "POST":
         form = StaffApplicationForm(request.POST, request.FILES, instance=application)
-        if form.is_valid():
-            app = form.save(commit=False)
-            app.user = request.user
-            app.status = "Pending"
-            app.save()
 
-            # optional: upload docs to "staff_docs" bucket if you want
-            if supabase:
-                file_fields = ["government_id", "proof_of_ownership", "proof_of_address"]
-                for field_name in file_fields:
-                    uploaded_file = request.FILES.get(field_name)
-                    if uploaded_file:
-                        path = f"staff_docs/{field_name}/{uploaded_file.name}"
-                        file_content = uploaded_file.read()
-                        supabase.storage.from_("staff_docs").upload(
-                            path, file_content
-                        )
-                        public_url = supabase.storage.from_(
-                            "staff_docs"
-                        ).get_public_url(path)
-                        setattr(app, field_name, public_url)
-                app.save()
-
+        if not form.is_valid():
+            messages.error(request, "Please check your form fields and try again.")
             return render(
                 request,
                 "apply_staff.html",
-                {"submitted": True, "application": app},
+                {"form": form, "application": application, "profile": profile},
             )
+
+        app = form.save(commit=False)
+        app.user = request.user
+        app.status = "Pending"
+        app.save()
+
+        if supabase:
+            file_fields = ["government_id", "proof_of_ownership", "proof_of_address"]
+
+            for field_name in file_fields:
+                uploaded_file = request.FILES.get(field_name)
+                if not uploaded_file:
+                    continue
+
+                ext = os.path.splitext(uploaded_file.name)[1].lower()
+                filename = f"{uuid.uuid4().hex}{ext}"
+
+                # IMPORTANT: path is INSIDE the bucket (do NOT prefix with "staff_docs/")
+                path = f"{field_name}/{request.user.id}/{filename}"
+
+                supabase.storage.from_("staff_docs").upload(
+                    path,
+                    uploaded_file.read(),
+                    {"content-type": uploaded_file.content_type},
+                )
+
+                # NOTE: this returns a public URL only if the bucket is public
+                public_url = supabase.storage.from_("staff_docs").get_public_url(path)
+                setattr(app, field_name, public_url)
+
+            app.save()
 
         return render(
             request,
             "apply_staff.html",
-            {
-                "form": form,
-                "application": application,
-                "error": "Please check your form fields and try again.",
-            },
+            {"submitted": True, "application": app, "profile": profile},
         )
 
-    else:
-        form = StaffApplicationForm(instance=application)
-
+    form = StaffApplicationForm(instance=application)
     return render(
         request,
         "apply_staff.html",

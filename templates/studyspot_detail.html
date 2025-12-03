@@ -207,7 +207,7 @@
                             <button type="submit" 
                                     class="btn check-in-btn toggle-btn" 
                                     title="{% if spot.is_closed %}This spot is currently closed{% else %}Check out of {{ active_checkin.spot.name }} and check in here{% endif %}">
-                                <i class="fas fa-exchange-alt"></i> Switch to {{ spot.name }}
+                                <i class="fas fa-exchange-alt"></i>Switch to {{ spot.name }}
                             </button>
                             <p class="checkin-status-warning">Currently checked in at <strong>{{ active_checkin.spot.name }}</strong></p>
                         {% endif %}
@@ -216,8 +216,9 @@
                         {# Scenario 3: User is not checked in anywhere (Show CHECK IN) #}
                         <button type="submit" 
                                 class="btn check-in-btn" 
-                                title="Click to check in">
-                            <i class="fas fa-sign-in-alt"></i> Check In Now
+                                title="{% if spot.is_closed %}This spot is currently closed{% else %}Click to check in{% endif %}"
+                                {% if spot.is_closed %}disabled{% endif %}>
+                            <i class="fas fa-sign-in-alt"></i> {% if spot.is_closed %}Closed{% else %}Check In Now{% endif %}
                         </button>
                     {% endif %}
                 </form>
