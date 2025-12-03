@@ -473,6 +473,7 @@ textarea {
   display: flex;
   align-items: center;
   gap: 0.8rem;
+  border: 1px solid rgba(144, 241, 156, 0.5);
   padding: 1rem 1.2rem;
   background: var(--white);
   border: 2px solid var(--gray);
@@ -489,8 +490,8 @@ textarea {
 }
 
 .chip-wrapper input[type="checkbox"]:checked + label {
-  background: var(--green-light);
-  border-color: var(--green-main);
+  background: #2c7430;
+  border-color: #19b41946;
   box-shadow: var(--shadow-sm);
 }
 

@@ -329,11 +329,13 @@ body {
 .status-badge.contributor {
     background: #fff3c4;
     color: #b88900;
+    margin-left: 20px;
 }
 
 .status-badge.regular {
     background: #e4e6eb;
     color: #555;
+    margin-left: 20px;
 }
 
 
