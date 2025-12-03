@@ -216,7 +216,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const trendingB = b.getAttribute('data-trending') === 'true' ? 1 : 0;
             return trendingB - trendingA;
           }
-          case 'nearest':
+          case 'nearest':{
+            return 0;
+          }
           default:
             return 0;
         }
